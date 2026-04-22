@@ -1,0 +1,452 @@
+---
+description: design system rules which are made by claude from referenced UI screenshots
+alwaysApply: true
+---
+## 🎨 Color System (Renk Sistemi)
+# CSS değişkenleri (variables) = tekrar kullanılabilir renk isimleri
+# Bunları global CSS dosyana (örn: globals.css veya variables.css) ekle
+
+```css
+:root {
+  /* Ana Renkler */
+  --color-canvas:     #F5F0E8;   /* Krem beyaz — ana arka plan rengi */
+  --color-warm-white: #FAF7F2;   /* Çok açık krem — kart/panel arka planı */
+  --color-ink:        #2C2416;   /* Koyu kahve — birincil metin rengi */
+  --color-ink-soft:   #5C4F3A;   /* Orta kahve — ikincil metin, açıklamalar */
+  --color-olive:      #6B6B45;   /* Zeytinyağı yeşili — vurgu rengi (3. görsel) */
+  --color-sage:       #8B9E7A;   /* Adaçayı yeşili — hover/aktif durumlar */
+  --color-terracotta: #B85C38;   /* Toprak kırmızısı — dikkat/öne çıkan eleman */
+  --color-sand:       #D4C4A0;   /* Kum rengi — kenarlıklar, ayırıcı çizgiler */
+
+  /* Arka Plan Katmanları */
+  --color-bg-primary:   var(--color-canvas);
+  --color-bg-secondary: var(--color-warm-white);
+  --color-bg-dark:      #1C1A14;   /* Koyu mod arka planı (üst banner gibi) */
+
+  /* Metin Renkleri */
+  --color-text-primary:   var(--color-ink);
+  --color-text-secondary: var(--color-ink-soft);
+  --color-text-muted:     #9C8E7A;   /* Soluk metin — tarih, etiket gibi yerlerde */
+  --color-text-inverse:   #F5F0E8;   /* Koyu zemin üzerindeki açık metin */
+}
+```
+
+---
+
+## ✍️ Typography (Yazı Tipi Sistemi)
+# Font seçimi bu tasarımın en önemli parçası.
+# Serif (çizgili) font = editorial lüks hissi
+# Mono (tek aralıklı) font = Brentano'daki teknik/belgesel his
+
+```css
+/* Google Fonts veya benzeri bir kaynaktan import edilmeli */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  /* Font Aileleri */
+  --font-serif:   'Cormorant Garamond', Georgia, serif;
+  /* ↑ Ana başlıklar için — Resore logosundaki lüks hissi verir */
+
+  --font-mono:    'DM Mono', 'Courier New', monospace;
+  /* ↑ Ürün numaraları, etiketler için — Brentano'daki teknik his */
+
+  --font-sans:    'DM Sans', system-ui, sans-serif;
+  /* ↑ Gövde metni, butonlar için — okunabilirlik */
+
+  /* Font Boyutları — rem birimi = tarayıcı base font boyutuna göre ölçeklenir */
+  --text-xs:   0.6875rem;   /*  11px — çok küçük etiket */
+  --text-sm:   0.8125rem;   /*  13px — açıklama metni */
+  --text-base: 1rem;         /*  16px — normal gövde metni */
+  --text-md:   1.125rem;    /*  18px — büyük gövde */
+  --text-lg:   1.375rem;    /*  22px — küçük başlık */
+  --text-xl:   1.75rem;     /*  28px — bölüm başlığı */
+  --text-2xl:  2.5rem;      /*  40px — sayfa başlığı */
+  --text-3xl:  3.5rem;      /*  56px — hero (ana ekran) başlığı */
+  --text-4xl:  5rem;         /*  80px — büyük display başlık */
+
+  /* Satır Yükseklikleri (line-height) */
+  --leading-tight:  1.1;    /* Başlıklar için sıkışık */
+  --leading-normal: 1.5;    /* Gövde metni için normal */
+  --leading-loose:  1.8;    /* Uzun paragraflar için rahat */
+
+  /* Harf Aralıkları (letter-spacing) */
+  --tracking-tight:  -0.02em;   /* Büyük başlıklar */
+  --tracking-normal:  0;
+  --tracking-wide:    0.08em;   /* Büyük harfle yazılan etiketler */
+  --tracking-wider:   0.15em;   /* Navigasyon menüsü gibi yerler */
+}
+```
+
+### Tipografi Kullanım Kuralları
+```
+Heading (Başlık) → font-family: var(--font-serif) + font-weight: 300-400
+                   → letter-spacing: var(--tracking-tight)
+                   → Büyük harf KULLANMA (sadece CSS ile uppercase yapılabilir)
+
+Label/Tag (Etiket) → font-family: var(--font-mono) + font-weight: 400
+                   → letter-spacing: var(--tracking-wide)
+                   → Küçük boyut (--text-xs veya --text-sm)
+
+Body (Gövde metni) → font-family: var(--font-sans) + font-weight: 300-400
+
+Navigation (Menü) → font-family: var(--font-sans)
+                  → font-size: var(--text-sm)
+                  → letter-spacing: var(--tracking-wider)
+                  → text-transform: uppercase
+```
+
+---
+
+## 📐 Spacing & Layout (Boşluk ve Yerleşim)
+# 8px grid sistemi = tüm boşluklar 8'in katlarıdır
+# Bu sayede tasarım tutarlı ve ölçeklenebilir olur
+
+```css
+:root {
+  --space-1:  0.25rem;   /*  4px */
+  --space-2:  0.5rem;    /*  8px */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-8:  2rem;      /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-16: 4rem;      /* 64px */
+  --space-20: 5rem;      /* 80px */
+  --space-24: 6rem;      /* 96px */
+  --space-32: 8rem;      /* 128px */
+
+  /* Sayfa Kenar Boşlukları */
+  --page-padding-x: clamp(1.5rem, 5vw, 5rem);
+  /* ↑ clamp() = mobilde 24px, masaüstünde 80px'e kadar otomatik büyür */
+
+  --page-padding-y: clamp(2rem, 6vh, 5rem);
+
+  /* İçerik Genişlikleri */
+  --max-width-text:    680px;    /* Metin okunabilirliği için ideal */
+  --max-width-content: 1200px;   /* Ana içerik alanı */
+  --max-width-wide:    1440px;   /* Tam ekran bölümler */
+}
+```
+
+### Layout Kuralları
+```
+✅ Asimetrik grid kullan (örn: sol 40% metin + sağ 60% görsel — Resore gibi)
+✅ Ürün listelerinde 2 sütunlu grid tercih et (Brentano ürün listesi gibi)
+✅ Bölümler arası büyük boşluk (--space-24 veya --space-32)
+✅ Negatif boşluğu (beyaz alan) tasarım elemanı olarak kullan
+❌ Centerlayıp ortaya yığma — asimetriye izin ver
+❌ 4'ten fazla sütunlu grid kullanma (bu estetik için fazla kalabalık)
+```
+
+---
+
+## 🔲 Component Rules (Bileşen Kuralları)
+
+### Buttons (Butonlar)
+```css
+/* Birincil Buton — Resore'daki "SHOP NOW" gibi */
+.btn-primary {
+  background: var(--color-ink);
+  color: var(--color-text-inverse);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  padding: var(--space-4) var(--space-8);
+  border: none;
+  border-radius: 0;   /* Köşeleri yuvarlama — bu estetik için kare köşe */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: var(--color-ink-soft);
+  letter-spacing: 0.2em;   /* Hover'da harf aralığı biraz artar */
+}
+
+/* İkincil Buton — çerçeveli (outlined) */
+.btn-secondary {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-ink);
+  /* Diğer stiller btn-primary ile aynı */
+}
+
+/* Brentano tarzı metin buton — okla */
+.btn-text {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* → ok işareti yanına eklenir */
+}
+```
+
+### Cards (Kartlar)
+```css
+/* Ürün Kartı — Brentano grid stili */
+.product-card {
+  background: var(--color-warm-white);
+  border: 1px solid var(--color-sand);   /* İnce kenarlık */
+  padding: var(--space-4);
+  display: grid;
+  grid-template-rows: auto 1fr auto;   /* Görsel · İsim · Fiyat */
+}
+
+/* Kart başlığı (ürün kodu gibi) */
+.product-card__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+/* Ürün fiyatı */
+.product-card__price {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  border-top: 1px solid var(--color-sand);
+  padding-top: var(--space-2);
+  margin-top: var(--space-3);
+}
+```
+
+### Navigation (Navigasyon)
+```css
+/* Üst Banner — Resore'daki koyu şerit */
+.banner {
+  background: var(--color-bg-dark);
+  color: var(--color-text-inverse);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  padding: var(--space-2) var(--page-padding-x);
+  text-align: center;
+}
+
+/* Ana Navigasyon */
+.nav {
+  background: var(--color-canvas);
+  border-bottom: 1px solid var(--color-sand);
+  padding: var(--space-4) var(--page-padding-x);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__logo {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 300;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+.nav__link {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+```
+
+### Hero Section (Ana Ekran Bölümü)
+```css
+/* Resore'daki 50/50 bölünmüş düzen */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;   /* Sol metin daha dar, sağ görsel daha geniş */
+  min-height: 85vh;                    /* Ekranın %85'ini kaplar */
+}
+
+.hero__content {
+  padding: var(--space-16) var(--page-padding-x);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero__heading {
+  font-family: var(--font-serif);
+  font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
+  font-weight: 300;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-ink);
+}
+
+.hero__image {
+  overflow: hidden;
+}
+
+.hero__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* Görseli alanı tam dolduracak şekilde kırp */
+}
+```
+
+---
+
+## 🌿 Texture & Atmosphere (Doku ve Atmosfer)
+# 3. görseldeki "taktil/dokunsal" hissi dijitale taşımak için
+
+```css
+/* Hafif kağıt dokusu efekti — CSS ile */
+.texture-paper {
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  /* ↑ Çok hafif, neredeyse görünmez gürültü (noise) dokusu */
+}
+
+/* Zeytinyağı arka planlı bölüm — 3. görsel gibi */
+.section-olive {
+  background-color: var(--color-olive);
+  color: var(--color-text-inverse);
+}
+
+/* İnce alt çizgi ayırıcı */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-sand);
+  margin: var(--space-8) 0;
+}
+```
+
+---
+
+## 📱 Responsive Breakpoints (Ekran Boyutu Kırılma Noktaları)
+# breakpoint = farklı ekran boyutlarında tasarımın değiştiği nokta
+
+```css
+/* Mobil önce yaklaşımı (mobile-first):
+   Önce mobil için yaz, sonra büyük ekranlar için üzerine yaz */
+
+/* Tablet ve üzeri */
+@media (min-width: 768px) {
+  /* Hero'da 50/50 grid aktif olur */
+}
+
+/* Masaüstü */
+@media (min-width: 1024px) {
+  /* Tam navigasyon görünür */
+}
+
+/* Geniş ekran */
+@media (min-width: 1280px) {
+  /* İçerik max-width sınırına ulaşır */
+}
+
+/* Mobil (max-width ile) */
+@media (max-width: 767px) {
+  .hero {
+    grid-template-columns: 1fr;   /* Tek sütuna geç */
+    grid-template-rows: auto auto;
+  }
+
+  .hero__image {
+    height: 60vw;   /* Görsel mobilde daha kısa */
+  }
+}
+```
+
+---
+
+## ✨ Animation Principles (Animasyon Prensipleri)
+
+```css
+:root {
+  /* Geçiş Süreleri */
+  --duration-fast:   150ms;   /* Buton hover gibi anlık geçişler */
+  --duration-normal: 300ms;   /* Genel geçişler */
+  --duration-slow:   600ms;   /* Sayfa yüklenme animasyonları */
+
+  /* Easing (Hareket Eğrisi) */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);   /* Google'ın material easing'i */
+  --ease-out:    cubic-bezier(0, 0, 0.2, 1);      /* Hızlı başla, yavaş bit */
+}
+
+/* Sayfa yüklendiğinde yukarıdan kayarak gelme */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeInUp var(--duration-slow) var(--ease-out) both;
+}
+
+/* Sırayla gelen elemanlar için gecikme (stagger) */
+.animate-in:nth-child(2) { animation-delay: 100ms; }
+.animate-in:nth-child(3) { animation-delay: 200ms; }
+.animate-in:nth-child(4) { animation-delay: 300ms; }
+```
+
+---
+
+## 🚫 Anti-Patterns (Yapılmaması Gerekenler)
+
+```
+❌ Renk olarak saf beyaz (#FFFFFF) veya saf siyah (#000000) kullanma
+   → Her zaman krem ve koyu kahve tonlarını tercih et
+
+❌ Border-radius (köşe yuvarlama) kullanma
+   → Bu estetik kare köşeleri sever (border-radius: 0)
+
+❌ Purple/mavi gradient kullanma
+   → Toprak tonları, yeşil ve krem paleti koru
+
+❌ Bold font ağırlığı (700+) kullanma
+   → Bu tasarım 300-400 font-weight değerlerini sever
+
+❌ İkon kütüphanesi (Material Icons, FontAwesome vb.) kullanma
+   → Bunun yerine Unicode karakterler veya basit SVG ok/artı/çarpı kullan
+   → Brentano'daki → ← ⊕ ○ gibi semboller
+
+❌ Kart gölgesi (box-shadow) kullanma
+   → Kenarlık (border) kullan, gölge değil
+
+❌ Yoğun animasyon ve efektler
+   → Minimalist yaklaşım: sadece opacity ve transform animasyonları
+```
+
+---
+
+## 📁 File Structure Suggestion (Dosya Yapısı Önerisi)
+# Cursor'da bu kuralları uygulamak için önerilen klasör yapısı
+
+```
+styles/
+├── variables.css     ← Tüm CSS değişkenleri (renkler, fontlar, boşluklar)
+├── typography.css    ← Başlık, gövde, etiket stilleri
+├── components/
+│   ├── button.css
+│   ├── card.css
+│   ├── nav.css
+│   └── hero.css
+├── layout.css        ← Grid ve sayfa yapısı
+├── animations.css    ← Tüm keyframe animasyonlar
+└── globals.css       ← Reset ve temel stiller
+```
+
+---
+
+*Bu design system şu referanslardan ilham alır: Resore (lüks wellness estetiği), Brentano (editorial tipografi düzeni), ve organik marka kimliği çalışmaları (toprak tonları, taktil his).*
