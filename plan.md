@@ -1,187 +1,89 @@
-# SkinLens MVP Geliştirme Planı (PRD v1.1’e göre)
+# 🚀 SkinLens MVP Geliştirme Planı (v1.2)
 
-Bu plan, `PRD.md` kapsamını **iteratif** şekilde teslim edilebilir parçalara böler. Hedef: Barkod/OCR ile ürün içerik listesini çıkarıp, Gemini ile cilt tipine göre risk analizi yaparak, DB’deki statik ingredient bilgisiyle birleştirilmiş bir rapor üretmek.
+Bu döküman, SkinLens projesinin teknik uygulama adımlarını içerir. LLM (AI) asistanları tarafından sırayla takip edilmek ve her adımda doğrulanmak üzere tasarlanmıştır.
 
----
-
-## 0) Tanımlar ve kabul kriterleri (DoD)
-
-- **Teknik DoD**
-  - Backend: FastAPI + Pydantic ile tüm istek/yanıt şemaları doğrulanır.
-  - DB: PostgreSQL şeması migrate ile yönetilir.
-  - AI: Gemini çıktısı **yalnızca JSON** olacak şekilde kısıtlanır; JSON parse + şema validasyonu yapılır.
-  - Güvenlik: Rate limit + temel input doğrulama + log/trace ekleri.
-- **Ürün DoD**
-  - Analiz ekranında “İçerikler analiz ediliyor…” yükleme durumu.
-  - Sonuçlar **renk kodlu** (Safe/Yeşil, Caution/Sarı, Avoid/Kırmızı).
-  - Her raporda yasal uyarı: “Tıbbi tavsiye değildir, yapay zeka destekli bilgilendirmedir.”
-  - Kirli veri kontrolü: `is_verified=false` (Pending_Review) ürünler genel aramalarda görünmez.
+## 📌 Mimari Özet
+- **Backend:** FastAPI (Python) + PostgreSQL + SQLModel.
+- **Frontend:** Next.js (TypeScript) + Tailwind CSS.
+- **AI Engine:** Google Gemini API (Dinamik Karar).
+- **Veri Kaynağı:** Hibrit (LLM Kararı + DB Sabit Bilgisi).
+- **Deployment Hedefi:** Vercel (Frontend) + Render/Railway (Backend & DB).
 
 ---
 
-## 1) Proje iskeleti ve çalışma standartları (Gün 1)
+## 🛠 Faz 1: Proje İskeleti ve Çalışma Standartları
+**Hedef:** Backend ve Frontend servislerinin izole dizinlerde ayağa kaldırılması.
 
-- **Repo yapısı**
-  - `backend/` FastAPI uygulaması
-  - `frontend/` Next.js/React uygulaması
-- **Ortam değişkenleri**
-  - `GEMINI_API_KEY`
-  - `GOOGLE_VISION_API_KEY` (veya servis hesabı yaklaşımı seçilecek)
-  - `DATABASE_URL`
-- **Geliştirici deneyimi**
-  - Backend: lint/format (ruff/black vb.), test altyapısı (pytest)
-  - Frontend: eslint/prettier, env şablonu
-
-Çıktılar:
-- Çalışan “hello world” backend + frontend
-- Lokal PostgreSQL’e bağlanan backend iskeleti
+- [ ] **1.1 Backend Kurulumu:**
+    - `backend/` dizini oluştur.
+    - Python `venv` kur ve aktif et.
+    - `requirements.txt` içeriği: `fastapi, uvicorn, sqlmodel, pydantic-settings, python-dotenv, asyncpg, google-generativeai`.
+    - `main.py` içinde temel `/health` endpoint'i yaz.
+- [ ] **1.2 Frontend Kurulumu:**
+    - `frontend/` dizini oluştur (Next.js + TS + Tailwind).
+    - `axios` ve `lucide-react` (ikonlar için) ekle.
+    - Temel "Hoş Geldiniz" sayfasını hazırla.
+- [ ] **1.3 Ortam Değişkenleri:**
+    - Root dizinde `.env` şablonu oluştur: `DATABASE_URL`, `GEMINI_API_KEY`.
 
 ---
 
-## 2) Veri modeli ve migrate’ler (Gün 1–2)
+## 🗄 Faz 2: Veri Modeli ve Veritabanı Katmanı
+**Hedef:** PostgreSQL şemasının oluşturulması ve statik verilerin (Seed) eklenmesi.
 
-PRD şemasına göre tablolar:
-- **`users`**
-  - `id (UUID)`
-  - `skin_type (Enum)` (örn: oily, dry, combination, sensitive)
-  - `sensitivities (JSONB)` (opsiyonel)
-  - `favorites (Array)` (ürün id’leri veya barkodlar; karar burada netleşecek)
-- **`ingredients_master`**
-  - `id`
-  - `inci_name (indexed)`
-  - `aliases` (PRD notu: varyasyon isimleri için kritik)
-  - `description_tr`
-  - `function_group`
-- **`products`**
-  - `id`
-  - `barcode` (nullable)
-  - `product_name`
-  - `ingredients_list (Array)`
-  - `verification_score (Float)`
-  - `is_verified (Boolean)`
-
-Çıktılar:
-- Migrate’ler ve temel seed (en azından `ingredients_master` için örnek veri)
+- [ ] **2.1 Veri Modelleri (SQLModel):**
+    - `User`: `id, skin_type (Enum), sensitivities (JSONB)`.
+    - `IngredientMaster`: `id, inci_name (index), description_tr, function_group`.
+    - `Product`: `id, barcode, product_name, ingredients_list (Array), is_verified (bool)`.
+- [ ] **2.2 Database Bağlantısı:** `database.py` içinde asenkron session yönetimi.
+- [ ] **2.3 Seed Data:** `ingredients_master` tablosuna en az 15 popüler içerik (Aqua, Niacinamide, Retinol, Alcohol Denat vb.) için açıklama ekle.
 
 ---
 
-## 3) Backend API v1 (Gün 2–4)
+## 🧠 Faz 3: AI Servis ve Prompt Mühendisliği
+**Hedef:** Gemini API üzerinden yapılandırılmış (structured) veri alma.
 
-### 3.1 `POST /api/v1/profile`
-- Kullanıcının cilt tipi + hassasiyetlerini kaydeder.
-- Basit kimlik: MVP için kullanıcı id’si header/body ile taşınabilir (ileride auth eklenir).
-
-### 3.2 `GET /api/v1/favorites`
-- Kullanıcı “dijital raf” listesini döner.
-- Kural: Pending ürünler sadece sahibine görünür.
-
-### 3.3 `POST /api/v1/analyze` (MVP’nin kalbi)
-Girdi:
-- `barcode` veya `image` (multipart)
-- `user_id` veya profil bağlamı (skin_type)
-
-Akış:
-1. **Hybrid Search**
-   - Barkod varsa: `products` tablosunda ara.
-   - Bulunursa: ürün içerik listesini kullan.
-   - Bulunamazsa: OCR akışına düş.
-2. **OCR (Google Vision)**
-   - Görselden ham metni çıkar.
-   - Bulanıklık/kalite düşükse kullanıcıya anlamlı hata/uyarı dön (PRD: OCR pre-processing uyarısı).
-   - Ham metinden ingredient listesini normalize et (büyük/küçük, ayraçlar, trim).
-3. **AI Analiz (Gemini)**
-   - Prompt: “Sadece JSON dön” kısıtı.
-   - Mantık: `Safe` için `reason=null`; `Caution/Avoid` için tıbbi olmayan açıklama.
-4. **Hybrid Merge (AI + DB)**
-   - AI sonucu `ingredient_name` üzerinden `ingredients_master` ile eşleştir:
-     - Önce `inci_name`, sonra `aliases` üzerinden arama.
-   - Çıktıya `function_group` ve `description_tr` ekle.
-5. **Self-enrichment**
-   - Ürün DB’de yoksa:
-     - `products` kaydı oluştur (`is_verified` başlangıçta false olabilir)
-     - `verification_score` hesapla: ingredient’ların sözlük eşleşme oranı
-     - Skor < %80 ise Pending_Review olarak kalmalı (PRD)
-
-Çıktılar:
-- Pydantic response modeli ile doğrulanmış analiz JSON’u
-- Hata durumları (OCR başarısız, AI JSON parse edilemedi, rate limit vb.)
+- [ ] **3.1 AI Client:** `services/ai_service.py` oluştur.
+- [ ] **System Prompt:** Gemini'yi "Sadece JSON dönen, asla yorum yapmayan bir cilt bakım uzmanı" olarak kurgula.
+- [ ] **Schema Validation:** Pydantic ile `{"safe": [], "caution": [], "avoid": []}` formatını doğrula.
 
 ---
 
-## 4) Güvenlik, maliyet ve guardrails (Gün 4–5)
+## 🔥 Faz 4: Backend API - Hibrit Analiz Motoru
+**Hedef:** Projenin kalbi olan `/analyze` akışının kodlanması.
 
-- **Rate limiting**
-  - Kullanıcı başına günlük tarama limiti (konfigüre edilebilir).
-- **JSON şema doğrulama**
-  - Gemini yanıtı parse edilmeden frontend’e gitmez.
-- **Loglama**
-  - Request id + hata sebepleri; (AI yanıtı/logları PII içermeyecek şekilde sınırlı tutulur)
-- **Pending görünürlük kuralı**
-  - `is_verified=false` ürünler “genel kütüphane” aramalarında listelenmez.
-
-Çıktılar:
-- Limit aşıldığında deterministik hata mesajı
-- AI yanıtı bozulduğunda güvenli fallback
+- [ ] **4.1 Analyze Endpoint:**
+    - Girdi: Cilt tipi + (Barkod veya İçerik Metni).
+    - Akış:
+        1. Barkod DB'de var mı? (Varsa direkt DB'den getir).
+        2. Yoksa: Gemini'ye metni gönder ve sınıflandırma (Safe/Caution/Avoid) al.
+        3. **Hybrid Merge:** Gemini'den gelen isimleri DB'deki açıklamalarla (`IngredientMaster`) eşleştir.
+- [ ] **4.2 Self-Enrichment:** Analiz edilen yeni ürünleri `is_verified=False` olarak otomatik kaydet.
 
 ---
 
-## 5) Frontend MVP akışları (Gün 3–6, backend ile paralel)
+## 🎨 Faz 5: Frontend MVP Kullanıcı Deneyimi
+**Hedef:** "Light & Smooth" vizyonuna uygun arayüzün bitirilmesi.
 
-### 5.1 Onboarding / Profil
-- Cilt tipi seçimi (yağlı/kuru/karma/hassas) + kaydetme
-
-### 5.2 Tarama ekranı
-- Barkod girişi (MVP: manuel input) + opsiyonel görsel yükleme
-- **Görsel sıkıştırma** (PRD: backend’e gitmeden önce)
-- “İçerikler analiz ediliyor…” loading state
-
-### 5.3 Sonuç ekranı
-- Safe/Caution/Avoid renk kodları
-- Ingredient satırında:
-  - isim
-  - statik fonksiyon/özet (DB)
-  - gerekirse AI nedeni (Caution/Avoid)
-- Yasal uyarı (disclaimer) görünür
-- “Rafa ekle / favori” aksiyonu
-
-### 5.4 Dijital raf (Favorites)
-- Favori ürün listesi
-- Pending ürünler sadece kullanıcı rafında görünebilir (PRD kuralı)
-
-Çıktılar:
-- Uçtan uca temel kullanıcı akışı tamam
+- [ ] **5.1 Onboarding:** Minimalist cilt tipi seçim ekranı.
+- [ ] **5.2 Dashboard:** Ürün barkodu girme veya içerik listesi yapıştırma alanı.
+- [ ] **5.3 Result Page:** - Renk kodlu (Yeşil/Sarı/Kırmızı) sonuç kartları.
+    - Maddeye tıklayınca açılan DB kaynaklı bilgi kutucuğu.
+    - **Yasal Uyarı (Disclaimer):** "Tıbbi tavsiye değildir" ibaresinin her analizde görünmesi.
 
 ---
 
-## 6) Test planı ve kalite (Gün 5–7)
+## 🧪 Faz 6: Güvenlik ve Final Kontrolleri
+**Hedef:** Hata yönetimi ve DoD doğrulaması.
 
-- **Backend**
-  - Unit: ingredient normalize + alias eşleştirme + verification_score
-  - Contract: `/analyze` response şeması
-  - Mock: Gemini ve Vision API mock’ları
-- **Frontend**
-  - Kritik akış: profil → analyze → sonuç → favori
-  - Hata ekranları: OCR yok, AI parse hatası, rate limit
-
-Çıktılar:
-- Minimum regresyon test seti
+- [ ] **6.1 Rate Limiting:** Kullanıcı başına günlük tarama limiti ekle.
+- [ ] **6.2 Fallback UI:** AI yanıtı bozulursa veya içerik okunamazsa kullanıcıya şık bir hata mesajı göster.
+- [ ] **6.3 Deployment:** Backend'i Render/Railway'e, Frontend'i Vercel'e yükle.
 
 ---
 
-## 7) Release kontrol listesi (Gün 7)
-
-- Env’ler doğru (API key’ler, DB)
-- Rate limit açık
-- Pending ürünlerin genel görünürlüğü kapalı
-- Disclaimer her raporda var
-- Basit metrikler/loglar (en az: analyze çağrı sayısı, OCR başarısı, eşleşme oranı)
-
----
-
-## 8) Sonraki iterasyon önerileri (MVP sonrası)
-
-- Admin paneli: Pending ürünleri onaylama/editleme
-- Barkod tarama (kamera) ve daha iyi OCR ön-işleme
-- Auth (JWT/Session) ve gerçek kullanıcı yönetimi
-- Ingredient sözlüğü zenginleştirme: daha kapsamlı `aliases` ve eşleştirme heuristics
-
+## ✅ Kabul Kriterleri (DoD)
+- Backend ve Frontend ayrı servisler olarak çalışıyor.
+- Analiz kararları AI'dan, madde açıklamaları DB'den geliyor.
+- Geçersiz içerik listeleri için sistem hata fırlatıyor.
+- Ürün bulunamadığında DB otomatik olarak zenginleşiyor.
