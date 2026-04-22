@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-canvas: #f5f0e8;
+  --color-warm-white: #faf7f2;
+  --color-ink: #2c2416;
+  --color-ink-soft: #5c4f3a;
+  --color-sand: #d4c4a0;
+
+  --color-bg-primary: var(--color-canvas);
+  --color-bg-secondary: var(--color-warm-white);
+
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: var(--color-ink-soft);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
