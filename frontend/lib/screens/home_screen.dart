@@ -2,14 +2,28 @@ import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
+import '../widgets/auth_bottom_sheet.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+  // Bir butona basıldığında çağırın:
+  void _showAuthSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      // barrierColor'da doğrudan AppColors.ink kullanmak yerine 
+      // const hatasını engellemek için opacity ekliyoruz:
+      barrierColor: AppColors.ink.withOpacity(0.7), 
+      // ÖNEMLİ: 'const' ibaresini builder içinden kaldırıyoruz
+      builder: (context) => AuthBottomSheet(), 
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -43,24 +57,30 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      centerTitle: false,
-      title: Text('SKINLENS', style: AppTextStyles.logoStyle),
-      leading: const Icon(Icons.menu, color: AppColors.ink),
-      actions: [
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Text('GİRİŞ YAP', style: AppTextStyles.monoLabel.copyWith(color: AppColors.ink)),
+AppBar _buildAppBar(BuildContext context) { // BuildContext ekledik
+  return AppBar(
+    backgroundColor: AppColors.background,
+    elevation: 0,
+    centerTitle: false,
+    title: Text('SKINLENS', style: AppTextStyles.logoStyle),
+    //leading: const Icon(Icons.menu, color: AppColors.ink),
+    actions: [
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: InkWell( // Tıklanabilirlik eklendi
+            onTap: () => _showAuthSheet(context),
+            child: Text(
+              'GİRİŞ YAP', 
+              style: AppTextStyles.monoLabel.copyWith(color: AppColors.ink)
+            ),
           ),
         ),
-      ],
-      shape: const Border(bottom: BorderSide(color: AppColors.sand, width: 0.5)),
-    );
-  }
+      ),
+    ],
+    shape: const Border(bottom: BorderSide(color: AppColors.sand, width: 0.5)),
+  );
+}
 
   Widget _buildScanButton() {
     return Column(
@@ -93,7 +113,7 @@ class HomeScreen extends StatelessWidget {
       children: [
         _actionItem(Icons.barcode_reader, "Barkod Oku"),
         const SizedBox(width: 12),
-        _actionItem(Icons.biotech, "İçindekiler"),
+        _actionItem(Icons.biotech, "İçindekileri Oku"),
       ],
     );
   }
@@ -119,7 +139,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildRecentHeader() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('Son Analizlerin', style: AppTextStyles.sectionTitle),
         Text('TÜMÜNÜ GÖR', style: AppTextStyles.monoLabel.copyWith(color: AppColors.sage, decoration: TextDecoration.underline)),
@@ -145,4 +165,6 @@ class HomeScreen extends StatelessWidget {
       ],
     );
   }
+
+  
 }
