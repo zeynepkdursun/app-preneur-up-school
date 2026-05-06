@@ -1,23 +1,43 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../core/constants.dart';
 import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auth_bottom_sheet.dart';
 import '../screens/skin_type_screen.dart';
 
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
   // Bir butona basıldığında çağırın:
-  void _showAuthSheet(BuildContext context) {
+void _showAuthSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      // barrierColor'da doğrudan AppColors.ink kullanmak yerine 
-      // const hatasını engellemek için opacity ekliyoruz:
-      barrierColor: AppColors.ink.withOpacity(0.7), 
-      // ÖNEMLİ: 'const' ibaresini builder içinden kaldırıyoruz
-      builder: (context) => AuthBottomSheet(), 
+      // Barrier color'ı tamamen şeffaf yapıyoruz çünkü bulanıklığı BackdropFilter ile vereceğiz
+      barrierColor: Colors.transparent, 
+      builder: (context) {
+        return Stack(
+          children: [
+            // Tüm ekranı kaplayan bulanıklık katmanı
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context), // Boşluğa tıklayınca kapatmak için
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
+                  child: Container(
+                    // Görseldeki o hafif koyu/puslu hava için çok düşük opacity
+                    color: AppColors.ink.withOpacity(0.01), 
+                  ),
+                ),
+              ),
+            ),
+            // Senin orijinal BottomSheet içeriğin
+            const AuthBottomSheet(),
+          ],
+        );
+      },
     );
   }
 
@@ -37,7 +57,7 @@ class HomeScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const SkinTypeScreen()),
                 );
               },
-              child: AnalysisCard(),
+              child: const AnalysisCard(),
             ),
             const SizedBox(height: 40),
             _buildScanButton(),

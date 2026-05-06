@@ -9,10 +9,23 @@ class AuthBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border.all(
+          // Bu metod çağrıldığı için decoration const OLAMAZ
+          color: AppColors.ink.withOpacity(0.1), 
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5), // Gölgeyi yukarı doğru verir
+          ),
+        ],
       ),
+      
       child: Column(
         mainAxisSize: MainAxisSize.min, // İçerik kadar yer kapla
         children: [
