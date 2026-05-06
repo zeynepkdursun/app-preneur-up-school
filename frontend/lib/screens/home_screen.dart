@@ -5,6 +5,7 @@ import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auth_bottom_sheet.dart';
 import '../screens/skin_type_screen.dart';
+import '../screens/scan_screen.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -60,8 +61,15 @@ void _showAuthSheet(BuildContext context) {
               child: const AnalysisCard(),
             ),
             const SizedBox(height: 40),
-            _buildScanButton(),
-            const SizedBox(height: 40),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ScanScreen()),
+                );
+              },
+              child: _buildScanButton(),
+            ),
             _buildQuickActions(),
             const SizedBox(height: 40),
             _buildRecentHeader(),

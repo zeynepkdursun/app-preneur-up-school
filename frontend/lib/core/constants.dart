@@ -13,7 +13,11 @@ class AppColors {
   static const Color textMuted = Color(0xFF434843);    // on-surface-variant (Gri-Yeşil)
   static const Color surfaceContainer = Color(0xFFF2EDEA);
   static const Color outlineVariant = Color(0xFFCEC5BA);
-  
+
+  static const Color secondary = Color(0xFF7C5730);
+  static const Color primary = Color(0xFF061B0E);
+  static const Color onSurfaceVariant = Color(0xFF434843);
+  static const Color surfaceContainerLow = Color(0xFFF8F3ED);
   // Overlay ve Blur için
   static Color barrierColor = const Color(0xFF1B3022).withOpacity(0.2);
 }
@@ -40,10 +44,16 @@ class AppTextStyles {
         color: AppColors.ink,
       );
 
-static final TextStyle bodyMd = GoogleFonts.manrope(
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
-    height: 1.5,
-  );
+    static final TextStyle bodyMd = GoogleFonts.manrope(
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textMuted,
+        height: 1.5,
+    );
+    static const TextStyle labelCaps = TextStyle(
+      fontFamily: 'Manrope',
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 1.2,
+    );
 }

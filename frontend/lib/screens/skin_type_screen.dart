@@ -123,3 +123,13 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
