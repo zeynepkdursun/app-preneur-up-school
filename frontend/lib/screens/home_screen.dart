@@ -3,6 +3,7 @@ import '../core/constants.dart';
 import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auth_bottom_sheet.dart';
+import '../screens/skin_type_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -28,7 +29,16 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const AnalysisCard(),
+            // 2. ADIM: AnalysisCard'ı tıklanabilir yapıyoruz ve yönlendirme ekliyoruz
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SkinTypeScreen()),
+                );
+              },
+              child: AnalysisCard(),
+            ),
             const SizedBox(height: 40),
             _buildScanButton(),
             const SizedBox(height: 40),
@@ -165,6 +175,7 @@ AppBar _buildAppBar(BuildContext context) { // BuildContext ekledik
       ],
     );
   }
+
 
   
 }
