@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from typing import Optional, List
 from app.models.enums import RiskLevel
 
-class Ingredient(SQLModel, table=True):
+class IngredientsMaster(SQLModel, table=True):
     __tablename__ = "ingredients_master"
     
     id: Optional[int] = Field(default=None, primary_key=True)
