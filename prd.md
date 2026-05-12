@@ -1,4 +1,4 @@
-﻿# Product Requirements Document (PRD): SkinLens Platform
+��﻿# Product Requirements Document (PRD): SkinLens Platform
  
 **Sürüm:** 1.4 (Mobile & AI Hybrid Edition)
 
@@ -11,7 +11,7 @@
 ---
 
 ## 1. Executive Summary & Vision
-SkinLens, statik içerik bilgilerini kullanıcının o anki hedefleri (Goals) ve profiliyle (Skin Type) harmanlayan AI tabanlı bir kişisel analiz asistanıdır. Sadece içerik tanımlamakla kalmaz; kullanıcının tercihlerine (Örn: Leke açmak mı istiyor yoksa çillerini korumak mı?) göre Dinamik Karar Mekanizması işletir.
+SkinLens, statik içerik bilgilerini kullanıcının o anki hedefleri (Goals) ve profiliyle (Skin Type) harmanlayan AI tabanlı bir kişisel analiz asistanıdır. Sadece içerik tanımlamakla kalmaz; kullanıcının tercihlerine (Örn: Leke açmak mı istiyor yoksa çillerini korumak mı?göre Dinamik Karar Mekanizması işletir.
 * **Core Value Prop:** Barkod bağımlılığı olmadan, on-device OCR ve LLM (Gemini) entegrasyonu ile her kozmetik ürünü saniyeler içinde analiz ederek şeffaf içerik bilgisi sunmak[cite: 1].
 
 ---
@@ -19,11 +19,11 @@ SkinLens, statik içerik bilgilerini kullanıcının o anki hedefleri (Goals) ve
 ## 2. Personas & User Stories
 **1) Tarama (Input):** Kullanıcı ürün içerik listesini fotoğraflar (On-device OCR).
 
-**2) Bağlam Seçimi (Context):** Uygulama "Bu ürün nereye uygulanıyor?" (Yüz, Saç, Vücut) ve "Tipi nedir?" (Şampuan, Nemlendirici vb.) sorularıyla bağlamı netleştirir.
+**2Bağlam Seçimi (Context):** Uygulama "Bu ürün nereye uygulanıyor?" (Yüz, Saç, Vücutve "Tipi nedir?" (Şampuan, Nemlendirici vb.sorularıyla bağlamı netleştirir.
 
-**3) Akıllı Filtreleme:** Backend, kullanıcının sadece seçilen bölgeyle ilgili hedeflerini (Örn: Saç dökülmesi karşıtı) veritabanından çeker.
+**3) Akıllı Filtreleme:** Backend, kullanıcının sadece seçilen bölgeyle ilgili hedeflerini (Örn: Saç dökülmesi karşıtıveritabanından çeker.
 
-**4) Hibrit Analiz:**
+**4Hibrit Analiz:**
 Statik: DB'den genel INCI tanımları çekilir.
 Dinamik: Kullanıcı profili + Hedefler + Bağlam Gemini'ye gönderilir.
 
@@ -46,7 +46,7 @@ Veri bütünlüğü ve performans için **Master Table** ve **JSONB** yapısı h
     ```
 
 ### 3.2. Backend Mantığı (FastAPI & Gemini)
-Backend, Gemini'ye "Odaklanmış Veri" (Curated Context) göndererek token tasarrufu ve doğruluk sağlar:
+Backend, Gemini'ye "Odaklanmış Veri" (Curated Contextgöndererek token tasarrufu ve doğruluk sağlar:
 * **Kategori Filtreleme:** Ürün "Şampuan" ise "Yüz" hedefleri prompt'tan temizlenir.
 * **Niyet Duyarlılığı:** Kullanıcı "Çillerimi seviyorum" diyorsa, leke açıcılar `Caution` olarak işaretlenir.
 * **Override Hiyerarşisi:** LLM'den gelen kişiselleştirilmiş uyarı, DB'den gelen genel "Safe" bilgisinin üzerine yazılır.
@@ -127,30 +127,30 @@ Analiz süreci şu iki katmanı birleştirir[cite: 1]:
 
 ---
 
-## 4. Prompt Mühendisliği (System Instructions)
+## 7. Prompt Mühendisliği (System Instructions)
 
 Gemini API için belirlenen katı kurallar:
 1. **Prompt Constraint:** Model sadece ham JSON döndürmeye zorlanmalı; asla metinsel yorum yapmamalıdır.
 2.  **Sadece İstisnalar:** Sadece `Caution` ve `Avoid` durumundaki içerikleri döndür (Pozitif içerikler sadece 'Hero' kısmında yer alır).
-3.  **7 Kelime Kuralı:** Tüm açıklamalar maksimum 7 kelime, net ve kullanıcıya hitap eden (2. tekil şahıs) yapıda olmalıdır.
-4.  **Hero Ingredients:** Kullanıcının hedefiyle (Goal) eşleşen maddeleri (`Zinc PCA` -> `Yağ dengeleme`) mutlaka öne çıkar.
+3.  **7 Kelime Kuralı:** Tüm açıklamalar maksimum 7 kelime, net ve kullanıcıya hitap eden (2. tekil şahısyapıda olmalıdır.
+4.  **Hero Ingredients:** Kullanıcının hedefiyle (Goal) eşleşen maddeleri (`Zinc PCA` -> `Yağ dengeleme`mutlaka öne çıkar.
 5.  **Etkileşim Kontrolü:** Ürün içindeki veya rutinindeki (varsa) çakışan içerikleri (Örn: Retinol + C Vitamini) denetle.
 
 ---
 
-## 7. Operational Strategy (CPO Notes)
+## 8. Operational Strategy (CPO Notes)
 
-### 7.1. Data Integrity & Self-Enrichment
+### 8.1. Data Integrity & Self-Enrichment
 * **Verification Score:** OCR metin eşleşme oranı **%80**'in altındaysa ürün `is_verified = false` işaretlenir ve Admin onayına düşer[cite: 1].
-* **Kirli Veri Önlemi:** Onaylanmamış (`Pending_Review`) ürünler genel aramada çıkmaz; sadece ilk taratan kullanıcı kendi "Rafında" görebilir[cite: 1].
+* **Kirli Veri Önlemi:** Onaylanmamış (`Pending_Review`ürünler genel aramada çıkmaz; sadece ilk taratan kullanıcı kendi "Rafında" görebilir[cite: 1].
 * **Mapping Stratejisi:** Kimyasal varyasyonlar (Örn: Vitamin C vs L-Ascorbic Acid) için `aliases` (takma isimler) kolonu üzerinden eşleşme sağlanması kritiktir[cite: 1].
 
-### 7.2. Success Metrics (KPIs)
+### 8.2. Success Metrics (KPIs)
 * **Scan-to-Result Speed:** Kamerayı açtıktan sonra sonucun gelme süresi (Hedef: < 4 saniye)
 * **UGC Growth:** Veritabanına haftalık eklenen organik yeni ürün sayısı
 * **User Stickiness:** Kullanıcıların favori listesine eklediği ortalama ürün sayısı
 
-### 7.3 Backend Geliştirme Notları (Giriş)
+### 8.3 Backend Geliştirme Notları (Giriş)
 Framework: FastAPI (Asenkron yapı).
 ORM: SQLModel (Pydantic + SQLAlchemy entegrasyonu).
 Validation: Pydantic Enum sınıfları ile katı veri tipi kontrolü.
