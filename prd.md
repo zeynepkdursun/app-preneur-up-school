@@ -24,7 +24,6 @@ SkinLens, statik içerik bilgilerini kullanıcının o anki hedefleri (Goals) ve
 Statik: DB'den genel INCI tanımları çekilir.
 Dinamik: Kullanıcı profili + Hedefler + Bağlam Gemini'ye gönderilir.
 
-**5) Sonuç (Output):** Kişisel riskler, "Yıldız" (Hero) içerikler ve 7 kelimelik özetlerle nihai rapor sunulur.
 ---
 
 ## 3. Specifications & Architectural (Functional Requirements??)
@@ -64,16 +63,6 @@ Analiz süreci şu iki katmanı birleştirir[cite: 1]:
 * 
 ---
 
-## 4. Prompt Mühendisliği (System Instructions)
-
-Gemini API için belirlenen katı kurallar:
-1. **Prompt Constraint:** Model sadece ham JSON döndürmeye zorlanmalı; asla metinsel yorum yapmamalıdır.
-2.  **Sadece İstisnalar:** Sadece `Caution` ve `Avoid` durumundaki içerikleri döndür (Pozitif içerikler sadece 'Hero' kısmında yer alır).
-3.  **7 Kelime Kuralı:** Tüm açıklamalar maksimum 7 kelime, net ve kullanıcıya hitap eden (2. tekil şahıs) yapıda olmalıdır.
-4.  **Hero Ingredients:** Kullanıcının hedefiyle (Goal) eşleşen maddeleri (`Zinc PCA` -> `Yağ dengeleme`) mutlaka öne çıkar.
-5.  **Etkileşim Kontrolü:** Ürün içindeki veya rutinindeki (varsa) çakışan içerikleri (Örn: Retinol + C Vitamini) denetle.
-
----
 ## 4. Technical Specifications
 
 ### 4.1. Data Schema (PostgreSQL & SQLModel)
@@ -135,6 +124,17 @@ Gemini API için belirlenen katı kurallar:
 
 ---
 
+## 4. Prompt Mühendisliği (System Instructions)
+
+Gemini API için belirlenen katı kurallar:
+1. **Prompt Constraint:** Model sadece ham JSON döndürmeye zorlanmalı; asla metinsel yorum yapmamalıdır.
+2.  **Sadece İstisnalar:** Sadece `Caution` ve `Avoid` durumundaki içerikleri döndür (Pozitif içerikler sadece 'Hero' kısmında yer alır).
+3.  **7 Kelime Kuralı:** Tüm açıklamalar maksimum 7 kelime, net ve kullanıcıya hitap eden (2. tekil şahıs) yapıda olmalıdır.
+4.  **Hero Ingredients:** Kullanıcının hedefiyle (Goal) eşleşen maddeleri (`Zinc PCA` -> `Yağ dengeleme`) mutlaka öne çıkar.
+5.  **Etkileşim Kontrolü:** Ürün içindeki veya rutinindeki (varsa) çakışan içerikleri (Örn: Retinol + C Vitamini) denetle.
+
+---
+
 ## 7. Operational Strategy (CPO Notes)
 
 ### 7.1. Data Integrity & Self-Enrichment
@@ -152,5 +152,7 @@ Framework: FastAPI (Asenkron yapı).
 ORM: SQLModel (Pydantic + SQLAlchemy entegrasyonu).
 Validation: Pydantic Enum sınıfları ile katı veri tipi kontrolü.
 Security: Kullanıcı hassasiyetleri ve hedefleri için JSONB operasyonları.
+
 ---
+
 **Date:** May 2026
