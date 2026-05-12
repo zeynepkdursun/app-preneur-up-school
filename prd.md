@@ -1,8 +1,11 @@
 ﻿# Product Requirements Document (PRD): SkinLens Platform
  
-**Sürüm:** 1.4 (Mobile & AI Hybrid Edition)[cite: 1]
+**Sürüm:** 1.4 (Mobile & AI Hybrid Edition)
+
 **Project Status:** Geliştirme Aşamasında (AI & Personalization Focus)
+
 **Core Logic:** Hybrid Engine (Static DB + Dynamic LLM Override)
+
 **Tech Stack:** Flutter, FastAPI, PostgreSQL, Gemini API
 
 ---
