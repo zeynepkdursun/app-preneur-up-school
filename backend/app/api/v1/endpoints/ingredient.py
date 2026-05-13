@@ -9,11 +9,24 @@ router = APIRouter()
 
 @router.get("/search", response_model=List[IngredientsMaster])
 def search_ingredients(
-    q: str = Query(..., min_length=2, description="Aramak istediğiniz içerik adı veya takma adı"),
+    q: str = Query(None, min_length=2, description="Aramak istediğiniz içerik adı veya takma adı"),
     session: Session = Depends(get_session)
 ):
     repo = IngredientRepository(session)
+
+    # DURUM 1: Sorgu boş mu? (Kullanıcı hiçbir şey yazmadıysa)
+    if q is None or q.strip() == "":
+        return repo.get_all()
+    
+    # DURUM 2: Bir şey aranıyor
     results = repo.search_by_name_or_alias(q)
+    
+    # DURUM 3: Aranan şey bulunamadı mı?
+    if not results:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"'{q}' ile eşleşen bir içerik bulunamadı."
+        )
     return results
 
 @router.post("/seed", status_code=201)
@@ -54,3 +67,17 @@ def seed_ingredients(session: Session = Depends(get_session)):
         return {"message": f"{len(sample_data)} madde başarıyla eklendi."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@router.post("/bulk", status_code=201)
+def bulk_create_ingredients(
+    ingredients: List[IngredientsMaster], # Swagger'a JSON listesi yapıştırabilirsin
+    session: Session = Depends(get_session)
+):
+    repo = IngredientRepository(session)
+    try:
+        repo.bulk_insert(ingredients)
+        return {"status": "success", "message": f"{len(ingredients)} içerik kaydedildi."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Veri formatı hatalı: {str(e)}")
