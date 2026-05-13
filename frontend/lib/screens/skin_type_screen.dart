@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../widgets/skin_type_option.dart';
 import '../widgets/sensitivity_chip.dart';
+import '../core/api_service.dart';
 
 class SkinTypeScreen extends StatefulWidget {
   const SkinTypeScreen({super.key});
@@ -11,8 +12,23 @@ class SkinTypeScreen extends StatefulWidget {
 }
 
 class _SkinTypeScreenState extends State<SkinTypeScreen> {
-  String selectedType = "";
-  Map<String, bool> sensitivities = {"Alkol": false, "Parfüm": false, "Gluten / Diğer": false};
+  // Seçilen Türkçe etiket
+  String selectedLabel = "";
+  
+  // Backend Enum karşılıkları
+  final Map<String, String> skinTypeMap = {
+    "Kuru": "DRY",
+    "Karma": "COMBINATION",
+    "Yağlı": "OILY",
+    "Normal": "NORMAL",
+    "Hassas": "SENSITIVE",
+  };
+
+  Map<String, bool> sensitivities = {
+    "Alkol": false, 
+    "Parfüm": false, 
+    "Gluten / Diğer": false
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +50,11 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
             const SizedBox(height: 32),
             const Text("Hangi cilt tipine sahipsin?", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
-            ...["Kuru", "Karma / Yağlı", "Normal", "Hassas"].map((type) => SkinTypeOption(
-              label: type,
-              isSelected: selectedType == type,
-              onTap: () => setState(() => selectedType = type),
+            // Belirlediğin 5 buton: Kuru, Karma, Yağlı, Normal, Hassas
+            ...skinTypeMap.keys.map((label) => SkinTypeOption(
+              label: label,
+              isSelected: selectedLabel == label,
+              onTap: () => setState(() => selectedLabel = label),
             )),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -107,10 +124,28 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 4,
         ),
-        onPressed: () {
-          // Burada seçimleri kaydedip home'a dönebilirsin
-          Navigator.pop(context);
-        },
+        onPressed: selectedLabel.isEmpty 
+          ? null 
+          : () async {
+              // Map üzerinden backend'in beklediği Enum değerini alıyoruz
+              // Örn: "Karma" -> "COMBINATION"
+              String formattedType = skinTypeMap[selectedLabel]!;
+
+              try {
+                // BURASI KRİTİK: Servisi çağırıyoruz
+                await ApiService.saveProfile(formattedType, sensitivities);
+
+                // Başarılıysa Home'a yönlendir
+                if (mounted) {
+                  Navigator.pushReplacementNamed(context, '/home');
+                }
+              } catch (e) {
+                  // Backend kapalıysa veya IP yanlışı varsa buraya düşer
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Bağlantı Hatası: $e")),
+                  );
+              }
+            },
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -123,13 +158,3 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-

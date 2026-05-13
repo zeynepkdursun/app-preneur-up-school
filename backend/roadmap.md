@@ -23,6 +23,28 @@ CORS & Middleware: Flutter uygulamasının (mobil emülatör/web) FastAPI'ye eri
 
 Pydantic Model Sync: Backend'deki User, Ingredient ve AnalysisResult modellerini oluşturup Cursor'dan bunların Dart karşılıklarını (Data Classes) üretmesini iste
 
+
+----------------------
+
+**Aşama 7:** Kimlik Doğrulama ve Güvenlik (Auth & Security)
+Bu aşamada, "test_user" yerine gerçek kullanıcıları sisteme dahil edeceğiz. Firebase Auth veya FastAPI JWT kullanarak "SkinLens'e Katıl" ekranlarını (UI: bottom_sheet_login.png) backend'e bağlayacağız.
+
+Infrastructure (Backend): * python-jose ve passlib kütüphanelerini kullanarak JWT (JSON Web Token) tabanlı bir yapı kur.
+
+Kullanıcı şifrelerini veritabanına asla açık metin olarak kaydetme; bcrypt ile hash'leyerek sakla.
+
+Endpoints: * POST /api/v1/auth/signup: Yeni kullanıcı oluştur.
+
+POST /api/v1/auth/token: Kullanıcı giriş yaptığında bir erişim token'ı döndür.
+
+Security Middleware: * /api/v1/users/profile ve /api/v1/analyze gibi kişisel endpoint'leri koruma altına al.
+
+Sadece geçerli bir "Bearer Token" gönderen kullanıcıların kendi verilerini güncellemesine izin ver.
+
+Flutter Integration: * "Giriş Yap" butonuna basıldığında token'ı al ve flutter_secure_storage kullanarak cihazda güvenli bir şekilde sakla.
+
+ApiService içindeki tüm isteklere bu token'ı Authorization header'ı olarak ekle.
+
 **Aşama 4:** Profil ve Kişiselleştirme (UI: skin_type_selection.png)
 Uygulamanın kalbi olan kişiselleştirme verisini backend'e bağlayalım.
 

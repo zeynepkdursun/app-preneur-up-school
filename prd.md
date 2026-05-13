@@ -35,7 +35,7 @@ Dinamik: Kullanıcı profili + Hedefler + Bağlam Gemini'ye gönderilir.
 Veri bütünlüğü ve performans için **Master Table** ve **JSONB** yapısı hibrit şekilde kullanılır:
 
 * **Enum Alanları:**
-    * `SkinType`: (Karma, Yağlı, Kuru, Normal)
+    * `SkinType`: (Karma, Yağlı, Kuru, Normal, Hassas)
     * `SafetyStatus`: (Safe, Caution, Avoid)
 * **Master Tables:**
     * `GoalsMaster`: Tüm hedeflerin (Leke açma, Yağ dengeleme vb.) kategori bazlı tutulduğu referans tablosu.
