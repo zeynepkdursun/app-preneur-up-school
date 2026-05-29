@@ -3,7 +3,7 @@ from app.db.session import init_db
 from app.api.v1.endpoints import ingredient
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings  # config.py'daki settings'i içe aktarıyoruz
-
+from app.api.v1.endpoints import auth
 app = FastAPI(title=settings.PROJECT_NAME, version="1.4")
 
 
@@ -41,4 +41,7 @@ app.include_router(ingredient.router, prefix="/api/v1/ingredient", tags=["Ingred
 # app/main.py içinde bir yere ekle:
 from app.api.v1.endpoints import user
 app.include_router(user.router, prefix="/api/v1/users", tags=["users"])
+
 # Swagger: http://localhost:8000/docs
+
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])

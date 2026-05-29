@@ -1,40 +1,39 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
-from app.db.session import get_session # get_db yerine bunu kullanıyoruz
-from app.models.user import User
+from sqlmodel import Session
+from app.db.session import get_session
+from app.models.user import User, UserPublic
 from app.schemas.user import ProfileUpdate
 
+# DOĞRU İMPORT BURASI: auth yerine core.security kullanıyoruz
+from app.core.security import get_current_user
 router = APIRouter()
-@router.post("/profile")
+
+# HTTP POST yerine PUT veya PATCH kullanmak REST standartlarına daha uygundur
+@router.put("/profile", response_model=UserPublic)
 async def update_profile(
     profile_data: ProfileUpdate, 
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user) # Spring Boot'taki @AuthenticationPrincipal gibi!
 ):
-    statement = select(User).where(User.id == 1)
-    user = session.exec(statement).first()
+    """
+    Flutter'daki Cilt Tipi Seçim Ekranından gelen verilerle, 
+    giriş yapmış olan kullanıcının profilini günceller.
+    """
     
-    if not user:
-        # HATA ÇÖZÜMÜ: Boş kalan username ve zorunlu alanları dolduruyoruz
-        user = User(
-            id=1, 
-            username="test_user", # None yerine bir değer verelim
-            skin_type=profile_data.skin_type,
-            goals={},             # Boş JSON objesi
-            sensitivities=profile_data.sensitivities,
-            favorites=[]          # Boş liste
-        )
-        session.add(user)
-    else:
-        # Mevcut kullanıcıyı güncelle
-        user.skin_type = profile_data.skin_type
-        user.sensitivities = profile_data.sensitivities
-        session.add(user)
+    # Giriş yapmış kullanıcının alanlarını DTO'dan gelen verilerle güncelliyoruz
+    current_user.skin_type = profile_data.skin_type
     
+    if profile_data.sensitivities is not None:
+        current_user.sensitivities = profile_data.sensitivities
+        
+    if profile_data.goals is not None:
+        current_user.goals = profile_data.goals
+
     try:
+        session.add(current_user)
         session.commit()
-        session.refresh(user)
+        session.refresh(current_user)
+        return current_user # Geriye şifresiz UserPublic şeması dönecektir
     except Exception as e:
-        session.rollback() # Hata olursa işlemi geri al
-        raise HTTPException(status_code=500, detail=f"Veritabanı hatası: {str(e)}")
-    
-    return {"status": "success", "user_id": user.id}
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Profil güncellenirken hata oluştu: {str(e)}")

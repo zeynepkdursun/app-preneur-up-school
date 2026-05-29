@@ -3,11 +3,11 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 
 class SkinType(str, Enum):
-    COMBINATION = "COMBINATION"
-    OILY = "OILY"
-    DRY = "DRY"
-    NORMAL = "NORMAL"
-    SENSITIVE = "SENSITIVE"
+    OILY = "yagli"
+    DRY = "kuru"
+    COMBINATION = "karma"
+    NORMAL = "normal"
+    SENSITIVE = "hassas"
 
 class RiskLevel(str, Enum):
     SAFE = "SAFE"
