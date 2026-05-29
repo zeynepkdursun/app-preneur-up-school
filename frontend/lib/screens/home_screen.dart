@@ -7,29 +7,57 @@ import '../widgets/auth_bottom_sheet.dart';
 import '../screens/skin_type_screen.dart';
 import '../screens/scan_screen.dart';
 
-
-class HomeScreen extends StatelessWidget {
+// 1. Sınıf tanımı değişiyor (StatefulWidget)
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+// 2. Asıl işin döndüğü "State" sınıfı
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoggedIn = false; // Durumu burada tutuyoruz
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthStatus(); // Sayfa acilir acilmaz kontrol et
+  }
+
+  Future<void> _checkAuthStatus() async {
+// TODO: İleride AuthManager entegrasyonu için:
+    // final token = await AuthManager.getToken();
+    // setState(() { _isLoggedIn = token != null; });
+    
+    print("DEBUG: _checkAuthStatus tetiklendi. Mevcut durum: $_isLoggedIn");
+  }
+
   // Bir butona basıldığında çağırın:
-void _showAuthSheet(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showAuthSheet(BuildContext context) async {
+    
+    final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       // Barrier color'ı tamamen şeffaf yapıyoruz çünkü bulanıklığı BackdropFilter ile vereceğiz
-      barrierColor: Colors.transparent, 
+      barrierColor: Colors.transparent,
       builder: (context) {
+        /*return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
+          child: const AuthBottomSheet(),
+        );*/
         return Stack(
           children: [
             // Tüm ekranı kaplayan bulanıklık katmanı
             Positioned.fill(
               child: GestureDetector(
-                onTap: () => Navigator.pop(context), // Boşluğa tıklayınca kapatmak için
+                onTap: () =>
+                    Navigator.pop(context, false), // İptal edilirse false doner
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
                   child: Container(
                     // Görseldeki o hafif koyu/puslu hava için çok düşük opacity
-                    color: AppColors.ink.withOpacity(0.01), 
+                    color: AppColors.ink.withOpacity(0.01),
                   ),
                 ),
               ),
@@ -40,8 +68,20 @@ void _showAuthSheet(BuildContext context) {
         );
       },
     );
+    // BottomSheet kapandıktan sonra burası çalışır
+    if (result == true) {
+      //_checkAuthStatus(); // Eğer giriş başarılıysa durumu kontrol et ve setState çalıştır
+      setState(() {
+        _isLoggedIn = true; // Giriş durumunu true yap ve arayüzü yenile
+      });
+      _checkAuthStatus(); // Ekstra kontroller veya loglama için tetikle
+    }
+    else {
+    print("DEBUG: Pencere kapatıldı ama giriş yapılmadı veya true dönmedi.");
+  }
   }
 
+  // Senin tüm build metodların ve yardımcı fonksiyonların artık BURADA olmalı
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,7 +95,9 @@ void _showAuthSheet(BuildContext context) {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SkinTypeScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const SkinTypeScreen(),
+                  ),
                 );
               },
               child: const AnalysisCard(),
@@ -79,14 +121,16 @@ void _showAuthSheet(BuildContext context) {
               name: "Hydrating Silk Serum",
               score: "%94",
               scoreColor: AppColors.sage,
-              imageUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200",
+              imageUrl:
+                  "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200",
             ),
             const ProductCard(
               brand: "CORE BOTANICS",
               name: "Reset Night Balm",
               score: "%82",
               scoreColor: AppColors.terracotta,
-              imageUrl: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?w=200",
+              imageUrl:
+                  "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?w=200",
             ),
           ],
         ),
@@ -95,30 +139,44 @@ void _showAuthSheet(BuildContext context) {
     );
   }
 
-AppBar _buildAppBar(BuildContext context) { // BuildContext ekledik
-  return AppBar(
-    backgroundColor: AppColors.background,
-    elevation: 0,
-    centerTitle: false,
-    title: Text('SKINLENS', style: AppTextStyles.logoStyle),
-    //leading: const Icon(Icons.menu, color: AppColors.ink),
-    actions: [
-      Center(
-        child: Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: InkWell( // Tıklanabilirlik eklendi
-            onTap: () => _showAuthSheet(context),
-            child: Text(
-              'GİRİŞ YAP', 
-              style: AppTextStyles.monoLabel.copyWith(color: AppColors.ink)
+  AppBar _buildAppBar(BuildContext context) {
+    // BuildContext ekledik
+    return AppBar(
+      backgroundColor: AppColors.background,
+      elevation: 0,
+      centerTitle: false,
+      title: Text('SKINLENS', style: AppTextStyles.logoStyle),
+      //leading: const Icon(Icons.menu, color: AppColors.ink),
+      actions: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _isLoggedIn
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.person_outline,
+                        color: AppColors.ink,
+                      ),
+                      onPressed: () => Navigator.pushNamed(context, '/profile'),
+                      
+                    )
+                  : InkWell(
+                      onTap: () => _showAuthSheet(context),
+                      child: Text(
+                        'GİRİŞ YAP',
+                        style: AppTextStyles.monoLabel.copyWith(
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
             ),
           ),
-        ),
+      ],
+      shape: const Border(
+        bottom: BorderSide(color: AppColors.sand, width: 0.5),
       ),
-    ],
-    shape: const Border(bottom: BorderSide(color: AppColors.sand, width: 0.5)),
-  );
-}
+    );
+  }
 
   Widget _buildScanButton() {
     return Column(
@@ -134,14 +192,21 @@ AppBar _buildAppBar(BuildContext context) { // BuildContext ekledik
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.center_focus_weak, size: 48, color: AppColors.sage.withOpacity(0.8)),
+              Icon(
+                Icons.center_focus_weak,
+                size: 48,
+                color: AppColors.sage.withOpacity(0.8),
+              ),
               const SizedBox(height: 12),
               Text('TARAMAYI BAŞLAT', style: AppTextStyles.monoLabel),
             ],
           ),
         ),
         const SizedBox(height: 12),
-        const Text('YAPAY ZEKA DESTEKLİ ANALİZ', style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
+        const Text(
+          'YAPAY ZEKA DESTEKLİ ANALİZ',
+          style: TextStyle(fontSize: 9, color: AppColors.textMuted),
+        ),
       ],
     );
   }
@@ -180,7 +245,13 @@ AppBar _buildAppBar(BuildContext context) { // BuildContext ekledik
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('Son Analizlerin', style: AppTextStyles.sectionTitle),
-        Text('TÜMÜNÜ GÖR', style: AppTextStyles.monoLabel.copyWith(color: AppColors.sage, decoration: TextDecoration.underline)),
+        Text(
+          'TÜMÜNÜ GÖR',
+          style: AppTextStyles.monoLabel.copyWith(
+            color: AppColors.sage,
+            decoration: TextDecoration.underline,
+          ),
+        ),
       ],
     );
   }
@@ -197,13 +268,19 @@ AppBar _buildAppBar(BuildContext context) { // BuildContext ekledik
       unselectedLabelStyle: AppTextStyles.monoLabel.copyWith(fontSize: 8),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ANASAYFA'),
-        BottomNavigationBarItem(icon: Icon(Icons.center_focus_weak), label: 'TARAMA'),
-        BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), label: 'KAYITLI'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'PROFİL'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.center_focus_weak),
+          label: 'TARAMA',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.bookmark_border),
+          label: 'KAYITLI',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          label: 'PROFİL',
+        ),
       ],
     );
   }
-
-
-  
 }

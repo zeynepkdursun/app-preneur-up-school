@@ -6,6 +6,8 @@ import 'package:skinlens_app/core/constants.dart';
 import 'package:skinlens_app/screens/home_screen.dart';
 import 'package:skinlens_app/screens/skin_type_screen.dart';
 
+import 'package:skinlens_app/screens/scan_screen.dart';
+
 void main() {
   // Buradaki const kalabilir
   runApp(const SkinLensApp());
@@ -31,6 +33,7 @@ class SkinLensApp extends StatelessWidget {
       routes: {
         '/skin-type': (context) => const SkinTypeScreen(),
         '/home': (context) => const HomeScreen(), // Hatanın çözümü burası
+        '/profile': (context) => const ScanScreen(), // İŞTE EKSİK OLAN ADRES BURASI!
       },
     );
   }
