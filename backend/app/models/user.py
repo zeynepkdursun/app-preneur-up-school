@@ -8,13 +8,12 @@ class UserBase(SQLModel):
     username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
     
-    # Bu alanları 'Optional' (İsteğe bağlı) ve varsayılan değerli yaptık.
-    # Böylece ilk kayıtta gönderilmeleri zorunlu olmayacak.
     skin_type: Optional[SkinType] = Field(default=None, nullable=True)
-    goals: Dict[str, List[str]] = Field(default={}, sa_column=Column(JSONB))
-    sensitivities: List[str] = Field(default=[], sa_column=Column(JSONB))
-    favorites: List[int] = Field(default=[], sa_column=Column(JSONB))
-
+    
+    # default yerine default_factory kullanarak FastAPI/Pydantic doğrulamasını garantiye alıyoruz
+    goals: Dict[str, List[str]] = Field(default_factory=dict, sa_column=Column(JSONB))
+    sensitivities: List[str] = Field(default_factory=list, sa_column=Column(JSONB))
+    favorites: List[int] = Field(default_factory=list, sa_column=Column(JSONB))
 # 2. VERİTABANI TABLOSU
 class User(UserBase, table=True): # Java'daki @Entity ve @Table(name="user")
     id: Optional[int] = Field(default=None, primary_key=True)

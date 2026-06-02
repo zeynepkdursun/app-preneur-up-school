@@ -1,26 +1,24 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 import bcrypt
-# İhtiyacımız olan tüm FastAPI bağımlılıklarını buraya ekledik:
 from fastapi import Depends, HTTPException, status
-
-# Veritabanı sorguları ve Modeller için gerekli importlar:
 from sqlmodel import Session, select
+
 from app.db.session import get_session
 from app.models.user import User
+from app.core.config import settings  # Ayarlarımızı içeri alıyoruz
 
-# Güvenlik Ayarları
+# Güvenlik Ayarları (Artık şifreleme motoru passlib yerine direkt bcrypt kütüphanenle yönetiliyor)
 PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "SÜPER_GİZLİ_ANAHTAR"  # Gerçek projede bunu .env dosyasında saklamalısın
-ALGORITHM = "HS256"
+
+# OAuth2 şeması: Flutter'ın token'ı HTTP Header'da 'Authorization: Bearer <token>' olarak göndereceğini belirtir.
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 
 def hash_password(password: str) -> str:
-    # Şifreyi byte formatına çevir
     pwd_bytes = password.encode('utf-8')
-    # Tuz (salt) oluştur ve hash'le
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
 
@@ -31,24 +29,28 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     )
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """JWT Token oluşturur."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=60))
+    
+    # Eğer özel bir süre verilmediyse .env'den gelen ACCESS_TOKEN_EXPIRE_MINUTES'ı kullanıyoruz
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-# OAuth2 şeması (Token'ın nereden alınacağını belirtir)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
+    
+    # ARTIK GÜVENLİ: .env dosyasından okunan SECRET_KEY ve ALGORITHM kullanılıyor
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) -> User:
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,  # Küçük bir yazım hatası düzeltildi: 01 yerine 401
+        status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Geçersiz kimlik bilgileri.",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Sabit string yerine yukarıdaki SECRET_KEY değişkenini verdik
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # ARTIK GÜVENLİ: Çözerken de .env'deki SECRET_KEY ve ALGORITHM kullanılıyor
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception

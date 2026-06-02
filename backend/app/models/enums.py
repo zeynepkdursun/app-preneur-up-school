@@ -9,6 +9,36 @@ class SkinType(str, Enum):
     NORMAL = "normal"
     SENSITIVE = "hassas"
 
+class ApplicationArea(str, Enum):
+    YUZ = "yuz"
+    EL = "el"
+    VUCUT = "vucut"
+    SAC = "sac"
+
+class ProductType(str, Enum):
+    YUZ_NEMLENDIRICI = "yuz_nemlendiricisi"
+    GUNES_KREMI = "gunes_kremi"
+    TONIK = "tonik"
+    YUZ_TEMIZLEME_JELI = "yuz_temizleme_jeli"
+    EL_KREMI = "el_kremi"
+    VUCUT_LOSYONU = "vucut_losyonu"
+    SAMPUAN = "sampuan"
+
+class Sensitivity(str, Enum):
+    PARFUM = "parfum"
+    ALKOL = "alkol"
+    ARBUTIN = "arbutin"
+    KUVVETLI_ASITLER = "kuvvetli_asitler"
+    GLUTEN = "gluten"
+
+class SkinGoal(str, Enum):
+    PULLANMAYI_ONLEME = "pullanmayi_onleme"
+    YAG_DENGELEME = "yag_dengeleme"
+    LEKE_ACMA = "leke_acma"
+    BARIYER_GUCLENDIRME = "bariyer_guclendirme"
+    AKNE_KARSITI = "akne_karsiti"
+
+
 class RiskLevel(str, Enum):
     SAFE = "SAFE"
     CAUTION = "CAUTION"

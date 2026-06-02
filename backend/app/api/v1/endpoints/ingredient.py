@@ -1,83 +1,24 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlmodel import Session
-from app.db.session import get_session
-from app.repository.ingredient import IngredientRepository
-from app.models.ingredient import IngredientsMaster
-from typing import List
-from app.models.enums import RiskLevel
+# backend/app/api/v1/endpoints/ingredient.py
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+from app.schemas.analysis import IngredientAnalysisRequest, SkinLensAnalysisOutput 
+from app.services.ai_service import OpenRouterAIService
+from app.models.enums import ApplicationArea, ProductType, SkinType, Sensitivity, SkinGoal
+
 router = APIRouter()
 
-@router.get("/search", response_model=List[IngredientsMaster])
-def search_ingredients(
-    q: str = Query(None, min_length=2, description="Aramak istediğiniz içerik adı veya takma adı"),
-    session: Session = Depends(get_session)
-):
-    repo = IngredientRepository(session)
+class IngredientAnalysisRequest(BaseModel):
+    ocr_text: str = Field(..., description="Taranan ham içerik listesi metni")
+    application_area: ApplicationArea = Field(..., description="Uygulama bölgesi")
+    product_type: ProductType = Field(..., description="Ürün kategorisi")
+    skin_type: SkinType = Field(..., description="Kullanıcının profilindeki sabit cilt tipi")
+    sensitivities: list[Sensitivity] = Field(default=[], description="Kullanıcının profilindeki hassasiyetler")
+    goals: list[SkinGoal] = Field(default=[], description="Kullanıcının profilindeki cilt hedefleri")
 
-    # DURUM 1: Sorgu boş mu? (Kullanıcı hiçbir şey yazmadıysa)
-    if q is None or q.strip() == "":
-        return repo.get_all()
-    
-    # DURUM 2: Bir şey aranıyor
-    results = repo.search_by_name_or_alias(q)
-    
-    # DURUM 3: Aranan şey bulunamadı mı?
-    if not results:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"'{q}' ile eşleşen bir içerik bulunamadı."
-        )
-    return results
-
-@router.post("/seed", status_code=201)
-def seed_ingredients(session: Session = Depends(get_session)):
-    """Aşama 2: Örnek verilerin toplu girişi (Bulk Insert)"""
-    repo = IngredientRepository(session)
-    
-    sample_data = [
-        IngredientsMaster(
-            inci_name="Hyaluronic Acid", 
-            aliases=["Hiyalüronik Asit", "HA"], 
-            description_tr="Cildi nemlendirir ve dolgunlaştırır.",
-            general_risk_level=RiskLevel.SAFE
-        ),
-        IngredientsMaster(
-            inci_name="Niacinamide", 
-            aliases=["B3 Vitamini", "Nikotinamid"], 
-            description_tr="Gözenek görünümünü azaltır, cilt bariyerini güçlendirir.",
-            general_risk_level=RiskLevel.SAFE
-        ),
-        IngredientsMaster(
-            inci_name="Sodium Laureth Sulfate", 
-            aliases=["SLES", "SLS"], 
-            description_tr="Yüzey aktif madde. Hassas ciltlerde kuruluk yapabilir.",
-            general_risk_level=RiskLevel.CAUTION
-        ),
-        IngredientsMaster(
-            inci_name="Retinol", 
-            aliases=["A Vitamini"], 
-            description_tr="Yaşlanma karşıtı ve yenileyici içerik.",
-            general_risk_level=RiskLevel.SAFE
-        ),
-        # ... Diğer maddeler buraya eklenebilir
-    ]
-    
-    try:
-        repo.bulk_insert(sample_data)
-        return {"message": f"{len(sample_data)} madde başarıyla eklendi."}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-@router.post("/bulk", status_code=201)
-def bulk_create_ingredients(
-    ingredients: List[IngredientsMaster], # Swagger'a JSON listesi yapıştırabilirsin
-    session: Session = Depends(get_session)
-):
-    repo = IngredientRepository(session)
-    try:
-        repo.bulk_insert(ingredients)
-        return {"status": "success", "message": f"{len(ingredients)} içerik kaydedildi."}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Veri formatı hatalı: {str(e)}")
+@router.post("/analyze", response_model=SkinLensAnalysisOutput)
+async def analyze_ingredients(payload: IngredientAnalysisRequest):
+    if not payload.ocr_text.strip():
+        raise HTTPException(status_code=400, detail="İçerik listesi boş bırakılamaz.")
+        
+    analysis_report = await OpenRouterAIService.analyze_ingredients(payload)
+    return analysis_report
