@@ -20,6 +20,23 @@ class OpenRouterAIService:
     SOLID - Single Responsibility: Sadece OpenRouter API entegrasyonu
     ve ham verinin şemaya uygun doğrulanmasından sorumludur.
     """
+
+    @staticmethod
+    def _normalize_ai_payload(raw_content: str) -> str:
+        """Model bazen 'ingredient' yerine 'item' döndürüyor; şemaya uyarlıyoruz."""
+        data = json.loads(raw_content)
+        for key in ("caution", "avoid", "hero_ingredients"):
+            items = data.get(key)
+            if not isinstance(items, list):
+                continue
+            for entry in items:
+                if not isinstance(entry, dict) or "ingredient" in entry:
+                    continue
+                if "item" in entry:
+                    entry["ingredient"] = entry.pop("item")
+                elif "name" in entry:
+                    entry["ingredient"] = entry.pop("name")
+        return json.dumps(data, ensure_ascii=False)
     
     @staticmethod
     async def analyze_ingredients(request: IngredientAnalysisRequest) -> dict:
@@ -52,11 +69,21 @@ class OpenRouterAIService:
                 
                 result = response.json()
                 raw_content = result['choices'][0]['message']['content']
-                
-                # Model kurallara uymuş mu diye Pydantic şemamız üzerinden süzüyoruz
-                validated_data = SkinLensAnalysisOutput.model_validate_json(raw_content)
-                
-                return validated_data.model_dump()
+                normalized_content = OpenRouterAIService._normalize_ai_payload(raw_content)
+
+                validated_data = SkinLensAnalysisOutput.model_validate_json(normalized_content)
+                output = validated_data.model_dump()
+
+                if not any([output["caution"], output["avoid"], output["hero_ingredients"]]):
+                    raise HTTPException(
+                        status_code=502,
+                        detail=(
+                            "AI analizi boş döndü. Swagger'da örnek gövdeyi kullanın: "
+                            "sensitivities (ör. [\"parfum\"]) ve goals (ör. [\"yag_dengeleme\"]) alanlarını doldurun."
+                        ),
+                    )
+
+                return output
                 
             except httpx.HTTPStatusError as e:
                 raise HTTPException(status_code=e.response.status_code, detail=f"OpenRouter Bağlantı Hatası: {e.response.text}")

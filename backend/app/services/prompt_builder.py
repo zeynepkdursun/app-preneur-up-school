@@ -9,11 +9,14 @@ class SkinLensPromptBuilder:
             "Gelen içerik listesini; ürün tipini, uygulama bölgesini, kullanıcının cilt tipini, "
             "hassasiyetlerini ve hedeflerini analiz etmektir.\n\n"
             "ANALİZ KURALLARI:\n"
-            "1. Sadece 'caution' (dikkat) ve 'avoid' (kaçın) maddelerini listele. 'safe' olanları listeye ekleme[cite: 1].\n"
-            "2. 'Hero Ingredients' kısmında, sadece kullanıcının HEDEFİYLE (Goal) doğrudan örtüşen maddeleri listele[cite: 1].\n"
-            "3. Bir madde genel olarak faydalı olsa bile, kullanıcının HEDEFİNE aykırıysa veya kullanıcının HASSASİYET listesindeki "
-            "bir maddeyi tetikliyorsa onu mutlaka 'caution' veya 'avoid' olarak işaretle ve nedenini açıkla[cite: 1].\n"
-            "4. Açıklamalar (reason) kullanıcı hedefine/profiline özel olmalı ve KESİNLİKLE MAKSİMUM 7 KELİME olmalıdır[cite: 1]."
+            "1. Sadece 'caution' (dikkat) ve 'avoid' (kaçın) maddelerini listele. 'safe' olanları listeye ekleme.\n"
+            "2. 'hero_ingredients' kısmında kullanıcının hedefiyle örtüşen maddeleri listele.\n"
+            "3. Hassasiyet listesindeki bir madde içerikte varsa onu 'caution' veya 'avoid' olarak işaretle.\n"
+            "4. Hassasiyet listesi boşsa, cilt tipine göre bilinen riskli maddeleri yine de değerlendir "
+            "(ör. yağlı cilt + Sodium Laureth Sulfate → avoid, kuru cilt + alkol → caution).\n"
+            "5. Hedef listesi boşsa, cilt tipine uygun faydalı aktifleri hero_ingredients'e ekle.\n"
+            "6. Açıklamalar (reason) profil/cilt tipine özel olmalı ve KESİNLİKLE MAKSİMUM 7 KELİME olmalıdır.\n"
+            "7. İçerik listesinde eşleşme varsa listeleri boş bırakma."
         )
 
     @staticmethod
@@ -33,6 +36,8 @@ class SkinLensPromptBuilder:
                 [İÇERİK LİSTESİ]:
                 {request.ocr_text}
                 [CRUCIAL HINT]:
-                You must generate a valid JSON containing 'caution', 'avoid', and 'hero_ingredients' fields based on the rules. 
-                Do not leave lists empty if there are clear matches like 'parfum' for sensitivity or 'urea' for goals.
+                You must generate a valid JSON containing 'caution', 'avoid', and 'hero_ingredients' fields.
+                Do not leave all lists empty when the ingredient list contains analyzable INCI names.
+                If sensitivities include 'parfum' and Parfum is present, it MUST appear in avoid or caution.
+                If goals include 'yag_dengeleme' and Zinc PCA or Niacinamide is present, add to hero_ingredients.
                 """
