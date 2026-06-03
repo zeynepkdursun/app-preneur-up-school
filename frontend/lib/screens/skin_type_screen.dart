@@ -12,16 +12,29 @@ class SkinTypeScreen extends StatefulWidget {
 }
 
 class _SkinTypeScreenState extends State<SkinTypeScreen> {
+  // ApiService instance'ını oluşturuyoruz
+  final ApiService _apiService = ApiService();
+  bool _isSaving = false; // Yüklenme durumu için
+
   // Seçilen Türkçe etiket
   String selectedLabel = "";
   
   // Backend Enum karşılıkları
-  final Map<String, String> skinTypeMap = {
+  /*final Map<String, String> skinTypeMap = {
     "Kuru": "DRY",
     "Karma": "COMBINATION",
     "Yağlı": "OILY",
     "Normal": "NORMAL",
     "Hassas": "SENSITIVE",
+  };
+ */
+  // Backend enums.py içindeki ham string değerleriyle (values) birebir eşliyoruz
+  final Map<String, String> skinTypeMap = {
+    "Yağlı": "yagli",
+    "Kuru": "kuru",
+    "Karma": "karma",
+    "Normal": "normal",
+    "Hassas": "hassas",
   };
 
   Map<String, bool> sensitivities = {
@@ -50,11 +63,13 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
             const SizedBox(height: 32),
             const Text("Hangi cilt tipine sahipsin?", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
-            // Belirlediğin 5 buton: Kuru, Karma, Yağlı, Normal, Hassas
             ...skinTypeMap.keys.map((label) => SkinTypeOption(
               label: label,
               isSelected: selectedLabel == label,
-              onTap: () => setState(() => selectedLabel = label),
+              onTap: () { 
+                if (_isSaving) return; 
+                setState(() => selectedLabel = label);  
+              },
             )),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -75,7 +90,10 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
       backgroundColor: AppColors.background.withOpacity(0.95),
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(icon: const Icon(Icons.arrow_back, color: AppColors.ink), onPressed: () => Navigator.pop(context)),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: AppColors.ink), 
+        onPressed: _isSaving ? null : () => Navigator.pop(context),
+      ),
       title: const Text("CİLT TİPİNİ SEÇ", style: TextStyle(color: AppColors.ink, fontSize: 12, letterSpacing: 2, fontWeight: FontWeight.w700)),
       actions: const [
         Padding(
@@ -98,21 +116,28 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
     );
   }
 
-  Widget _buildSensitivitiesGrid() {
-    return Wrap(
-      spacing: 12, runSpacing: 12,
-      children: sensitivities.keys.map((s) => SizedBox(
-        width: s == "Gluten / Diğer" ? double.infinity : (MediaQuery.of(context).size.width - 60) / 2,
-        child: SensitivityChip(
-          label: s,
-          isSelected: sensitivities[s]!,
-          onChanged: (val) => setState(() => sensitivities[s] = val!),
-        ),
-      )).toList(),
-    );
-  }
+Widget _buildSensitivitiesGrid() {
+  return Wrap(
+    spacing: 12, runSpacing: 12,
+    children: sensitivities.keys.map((s) => SizedBox(
+      width: s == "Gluten / Diğer" ? double.infinity : (MediaQuery.of(context).size.width - 60) / 2,
+      child: SensitivityChip(
+        label: s,
+        isSelected: sensitivities[s]!,
+        onChanged: (val) {
+          // Eğer o an kayıt yapılıyorsa tıklamayı görmezden gel
+          if (_isSaving) return; 
+          setState(() => sensitivities[s] = val!);
+        },
+      ),
+    )).toList(),
+  );
+}
 
   Widget _buildSaveButton() {
+    // Butonun aktif olma şartı: Cilt tipi seçilmiş olmalı ve o an istek atılmıyor olmalı
+    bool isButtonEnabled = selectedLabel.isNotEmpty && !_isSaving;
+
     return Container(
       padding: const EdgeInsets.all(24),
       color: AppColors.background,
@@ -124,37 +149,50 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 4,
         ),
-        onPressed: selectedLabel.isEmpty 
-          ? null 
-          : () async {
-              // Map üzerinden backend'in beklediği Enum değerini alıyoruz
-              // Örn: "Karma" -> "COMBINATION"
-              String formattedType = skinTypeMap[selectedLabel]!;
-
-              try {
-                // BURASI KRİTİK: Servisi çağırıyoruz
-                await ApiService.saveProfile(formattedType, sensitivities);
-
-                // Başarılıysa Home'a yönlendir
-                if (mounted) {
-                  Navigator.pushReplacementNamed(context, '/home');
-                }
-              } catch (e) {
-                  // Backend kapalıysa veya IP yanlışı varsa buraya düşer
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Bağlantı Hatası: $e")),
-                  );
-              }
-            },
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("PROFİLİ KAYDET", style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
-            SizedBox(width: 12),
-            Icon(Icons.arrow_forward, size: 18),
-          ],
-        ),
+        onPressed: isButtonEnabled ? _handleProfileSave : null,
+        child: _isSaving 
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("PROFİLİ KAYDET", style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
+                  SizedBox(width: 12),
+                  Icon(Icons.arrow_forward, size: 18),
+                ],
+              ),
       ),
     );
+  }
+
+  // İstek mantığını temiz tutmak için ayrı bir metoda çıkardık
+  Future<void> _handleProfileSave() async {
+    setState(() => _isSaving = true);
+    
+    String formattedType = skinTypeMap[selectedLabel]!;
+
+    try {
+      // Artık instance üzerinden çağırıyoruz. Interceptor devreye girecek!
+      final success = await _apiService.saveProfile(formattedType, sensitivities);
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        if (success) {
+          // Başarılıysa Home'a yönlendir
+          Navigator.pop(context);
+          //Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Profil güncellenemedi. Lütfen tekrar deneyin.")),
+          );
+        }
+      }
+    } catch (e) {
+        if (mounted) {
+          setState(() => _isSaving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Bağlantı Hatası: $e")),
+          );
+        }
+    }
   }
 }

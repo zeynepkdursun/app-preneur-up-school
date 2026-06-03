@@ -53,3 +53,77 @@ class AnalysisResponse {
     );
   }
 }
+
+
+class IngredientReportItem {
+  final String ingredient;
+  final String reason;
+
+  IngredientReportItem({
+    required this.ingredient,
+    required this.reason,
+  });
+
+  factory IngredientReportItem.fromJson(Map<String, dynamic> json) {
+    return IngredientReportItem(
+      ingredient: json['ingredient'] ?? '',
+      reason: json['reason'] ?? '',
+    );
+  }
+}
+
+class SkinLensAnalysisOutput {
+  final List<IngredientReportItem> caution;
+  final List<IngredientReportItem> avoid;
+  final List<IngredientReportItem> heroIngredients;
+
+  SkinLensAnalysisOutput({
+    required this.caution,
+    required this.avoid,
+    required this.heroIngredients,
+  });
+
+  factory SkinLensAnalysisOutput.fromJson(Map<String, dynamic> json) {
+    return SkinLensAnalysisOutput(
+      caution: (json['caution'] as List? ?? [])
+          .map((i) => IngredientReportItem.fromJson(i))
+          .toList(),
+      avoid: (json['avoid'] as List? ?? [])
+          .map((i) => IngredientReportItem.fromJson(i))
+          .toList(),
+      heroIngredients: (json['hero_ingredients'] as List? ?? [])
+          .map((i) => IngredientReportItem.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+// Backend POST request gövdesi için DTO (Data Transfer Object)
+class IngredientAnalysisRequest {
+  final String ocrText;
+  final String applicationArea;
+  final String productType;
+  final String skinType;
+  final List<String> sensitivities;
+  final List<String> goals;
+
+  IngredientAnalysisRequest({
+    required this.ocrText,
+    required this.applicationArea,
+    required this.productType,
+    required this.skinType,
+    this.sensitivities = const [],
+    this.goals = const [],
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ocr_text': ocrText,
+      'application_area': applicationArea.toLowerCase(),
+      'product_type': productType.toLowerCase(),
+      'skin_type': skinType.toLowerCase(),
+      'sensitivities': sensitivities,
+      'goals': goals,
+    };
+  }
+}

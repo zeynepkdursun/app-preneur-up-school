@@ -1,6 +1,7 @@
+// lib/screens/scan_screen.dart
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
-import '../widgets/scan_overlay.dart';
+import '../models/analysis_model.dart';
 import 'analysis_result_screen.dart';
 
 class ScanScreen extends StatefulWidget {
@@ -11,211 +12,148 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  bool isIngredientsSelected = true; // Üstteki seçim için state
+  final TextEditingController _ingredientsController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
-@override
+  @override
+  void dispose() {
+    _ingredientsController.dispose();
+    super.dispose();
+  }
+
+  void _submitAnalysis() {
+    // Formun boş olup olmadığını kontrol ediyoruz
+    if (_formKey.currentState!.validate()) {
+      
+      // 1. Kullanıcının elle girdiği veya yapıştırdığı metni alıyoruz
+      final String inputIngredients = _ingredientsController.text.trim();
+
+      // 2. FastAPI backend'inin beklediği şemaya uygun DTO'yu (Request nesnesini) oluşturuyoruz
+      // NOT: Cilt tipi, hedefler ve hassasiyetler ileride Auth/User profilinden dinamik çekilecek.
+      // Şimdilik test için PRD'ye uygun mock sabitler veriyoruz.
+      final requestPayload = IngredientAnalysisRequest(
+        ocrText: inputIngredients,
+        applicationArea: "yuz",
+        productType: "yuz_nemlendiricisi",
+        skinType: "yagli",
+        sensitivities: ["parfum"],
+        goals: ["yag_dengeleme"],
+      );
+
+      // 3. Oluşturulan payload'u Result ekranına paslayarak sayfayı açıyoruz
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AnalysisResultScreen(analysisRequest: requestPayload),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.surfaceContainerLow,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white), // AppColors.ink yerine okunabilirlik için white
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        // Title kısmını dikey bir kolona ayırdık: Üstte Analiz Butonu, Altta Seçenekler
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 1. ANALİZ ET BUTONU (Sayfaya yönlendiren kısım)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AnalysisResultScreen()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.ink.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: Colors.white24),
+        title: const Text(
+          "MANUEL İÇERİK ANALİZİ",
+          style: TextStyle(
+            color: AppColors.primary,
+            letterSpacing: 1.5,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey, // Form validasyonu için key bağlantısı
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "İçerik Listesini Girin",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.auto_awesome, color: Colors.white, size: 16),
-                    SizedBox(width: 6),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Kozmetik ürününüzün arkasında yer alan içerikleri (INCI listesini) aralarına virgül koyarak yazın veya yapıştırın.",
+                style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 24),
+              
+              // Metin Giriş Alanı
+              TextFormField(
+                controller: _ingredientsController,
+                maxLines: 8,
+                style: const TextStyle(color: AppColors.primary, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: "Örn: Aqua, Glycerin, Sodium Laureth Sulfate, Parfum, Zinc PCA...",
+                  hintStyle: TextStyle(color: AppColors.secondary.withOpacity(0.5)),
+                  filled: true,
+                  fillColor: AppColors.surfaceContainerLow,
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.secondary.withOpacity(0.2)),
+                  ),
+                  errorBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                  focusedErrorBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.red, width: 1.5),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Lütfen analiz için içerik listesi girin.";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+              
+              // Analiz Tetikleyici Buton
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: const RoundedRectangleBorder(),
+                ),
+                onPressed: _submitAnalysis, // Tıklandığında yukarıdaki metot çalışır
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                    SizedBox(width: 10),
                     Text(
-                      "ANALİZ ET",
+                      "İÇERİKLERİ ANALİZ ET",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
+                        letterSpacing: 1.5,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            // 2. İÇERİK / BARKOD SEÇİMİ
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildSegment("İÇERİK", isIngredientsSelected, () {
-                    setState(() => isIngredientsSelected = true);
-                  }),
-                  _buildSegment("BARKOD", !isIngredientsSelected, () {
-                    setState(() => isIngredientsSelected = false);
-                  }),
-                ],
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          // Arka Plan
-          Positioned.fill(
-            child: Container(
-              color: Colors.black87,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.photo_camera_front_outlined,
-                    size: 80,
-                    color: Colors.white.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Kamera hazırlanıyor...",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 14,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          // Tarama Alanı (Overlay)
-          Center(
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.85,
-              height: MediaQuery.of(context).size.height * 0.45,
-              child: const ScanOverlay(),
-            ),
-          ),
-
-          // Alt Kontroller
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: _buildBottomUI(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSegment(String title, bool isActive, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isActive ? Colors.black : Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomUI() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 50),
-      decoration: BoxDecoration(
-        color: AppColors.background.withOpacity(0.9), // Hafif şeffaf soft arka plan
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _circleIcon(Icons.flash_off),
-              _shutterButton(),
-              _circleIcon(Icons.photo_library),
             ],
           ),
-          const SizedBox(height: 24),
-          _tipBox(),
-        ],
+        ),
       ),
     );
   }
-
-  Widget _circleIcon(IconData icon) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(color: AppColors.secondary.withOpacity(0.2)),
-    ),
-    child: Icon(icon, color: AppColors.primary),
-  );
-
-  Widget _shutterButton() => Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(color: AppColors.secondary, width: 4),
-    ),
-    child: const CircleAvatar(
-      radius: 35,
-      backgroundColor: AppColors.primary,
-    ),
-  );
-
-  Widget _tipBox() => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: AppColors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: const Row(
-      children: [
-        Icon(Icons.lightbulb, color: AppColors.secondary, size: 20),
-        SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            "İpucu: Yazıların net göründüğünden emin olun.",
-            style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-          ),
-        ),
-      ],
-    ),
-  );
 }

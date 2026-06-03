@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:skinlens_app/core/constants.dart'; 
 import 'package:skinlens_app/screens/home_screen.dart';
 import 'package:skinlens_app/screens/skin_type_screen.dart';
-
 import 'package:skinlens_app/screens/scan_screen.dart';
+import 'package:skinlens_app/screens/profile_screen.dart';
 
 void main() {
   // Buradaki const kalabilir
@@ -27,13 +27,13 @@ class SkinLensApp extends StatelessWidget {
         scaffoldBackgroundColor: AppColors.background, 
         primaryColor: AppColors.ink,
       ),
-      home: const HomeScreen(), // HomeScreen sabit olabilir, bu kalsın.
+      //home: const HomeScreen(), // HomeScreen sabit olabilir, bu kalsın.
       // Başlangıç rotası
       initialRoute: '/home', 
       routes: {
         '/skin-type': (context) => const SkinTypeScreen(),
         '/home': (context) => const HomeScreen(), // Hatanın çözümü burası
-        '/profile': (context) => const ScanScreen(), // İŞTE EKSİK OLAN ADRES BURASI!
+        '/profile': (context) => const ProfileScreen(), // İŞTE EKSİK OLAN ADRES BURASI!
       },
     );
   }

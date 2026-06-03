@@ -7,7 +7,7 @@ import '../widgets/auth_bottom_sheet.dart';
 import '../screens/skin_type_screen.dart';
 import '../screens/scan_screen.dart';
 
-// 1. Sınıf tanımı değişiyor (StatefulWidget)
+// 1. Sınıf tanımı (StatefulWidget)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -21,67 +21,57 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus(); // Sayfa acilir acilmaz kontrol et
+    _checkAuthStatus(); // Sayfa açılır açılmaz kontrol et
   }
 
   Future<void> _checkAuthStatus() async {
-// TODO: İleride AuthManager entegrasyonu için:
+    // TODO: İleride AuthManager entegrasyonu için:
     // final token = await AuthManager.getToken();
     // setState(() { _isLoggedIn = token != null; });
     
     print("DEBUG: _checkAuthStatus tetiklendi. Mevcut durum: $_isLoggedIn");
   }
 
-  // Bir butona basıldığında çağırın:
+  // Bir butona basıldığında çağrılan Auth Sheet
   Future<void> _showAuthSheet(BuildContext context) async {
-    
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      // Barrier color'ı tamamen şeffaf yapıyoruz çünkü bulanıklığı BackdropFilter ile vereceğiz
       barrierColor: Colors.transparent,
       builder: (context) {
-        /*return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
-          child: const AuthBottomSheet(),
-        );*/
         return Stack(
           children: [
             // Tüm ekranı kaplayan bulanıklık katmanı
             Positioned.fill(
               child: GestureDetector(
-                onTap: () =>
-                    Navigator.pop(context, false), // İptal edilirse false doner
+                onTap: () => Navigator.pop(context, false), // İptal edilirse false döner
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
                   child: Container(
-                    // Görseldeki o hafif koyu/puslu hava için çok düşük opacity
                     color: AppColors.ink.withOpacity(0.01),
                   ),
                 ),
               ),
             ),
-            // Senin orijinal BottomSheet içeriğin
+            // Orijinal BottomSheet içeriği
             const AuthBottomSheet(),
           ],
         );
       },
     );
+    
     // BottomSheet kapandıktan sonra burası çalışır
     if (result == true) {
-      //_checkAuthStatus(); // Eğer giriş başarılıysa durumu kontrol et ve setState çalıştır
       setState(() {
         _isLoggedIn = true; // Giriş durumunu true yap ve arayüzü yenile
       });
-      _checkAuthStatus(); // Ekstra kontroller veya loglama için tetikle
+      _checkAuthStatus(); 
+    } else {
+      print("DEBUG: Pencere kapatıldı ama giriş yapılmadı veya true dönmedi.");
     }
-    else {
-    print("DEBUG: Pencere kapatıldı ama giriş yapılmadı veya true dönmedi.");
-  }
   }
 
-  // Senin tüm build metodların ve yardımcı fonksiyonların artık BURADA olmalı
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 2. ADIM: AnalysisCard'ı tıklanabilir yapıyoruz ve yönlendirme ekliyoruz
+            // 1. ADIM: AnalysisCard yönlendirmesi
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -103,6 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const AnalysisCard(),
             ),
             const SizedBox(height: 40),
+            
+            // 2. ADIM: Sadeleştirilmiş Yeni Tarama Butonu
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -112,8 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: _buildScanButton(),
             ),
-            _buildQuickActions(),
+            
+            // HATA BURADAYDI: _buildQuickActions() fonksiyon çağrısı tamamen kaldırıldı!
             const SizedBox(height: 40),
+            
             _buildRecentHeader(),
             const SizedBox(height: 16),
             const ProductCard(
@@ -121,16 +115,14 @@ class _HomeScreenState extends State<HomeScreen> {
               name: "Hydrating Silk Serum",
               score: "%94",
               scoreColor: AppColors.sage,
-              imageUrl:
-                  "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200",
+              imageUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200",
             ),
             const ProductCard(
               brand: "CORE BOTANICS",
               name: "Reset Night Balm",
               score: "%82",
               scoreColor: AppColors.terracotta,
-              imageUrl:
-                  "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?w=200",
+              imageUrl: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?w=200",
             ),
           ],
         ),
@@ -140,37 +132,36 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   AppBar _buildAppBar(BuildContext context) {
-    // BuildContext ekledik
     return AppBar(
       backgroundColor: AppColors.background,
       elevation: 0,
+      automaticallyImplyLeading: false, // Otomatik geri butonunu engelle
+      leading: null,
       centerTitle: false,
       title: Text('SKINLENS', style: AppTextStyles.logoStyle),
-      //leading: const Icon(Icons.menu, color: AppColors.ink),
       actions: [
         Center(
           child: Padding(
             padding: const EdgeInsets.only(right: 16),
             child: _isLoggedIn
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.person_outline,
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.person_outline,
+                      color: AppColors.ink,
+                    ),
+                    onPressed: () => Navigator.pushNamed(context, '/profile'),
+                  )
+                : InkWell(
+                    onTap: () => _showAuthSheet(context),
+                    child: Text(
+                      'GİRİŞ YAP',
+                      style: AppTextStyles.monoLabel.copyWith(
                         color: AppColors.ink,
                       ),
-                      onPressed: () => Navigator.pushNamed(context, '/profile'),
-                      
-                    )
-                  : InkWell(
-                      onTap: () => _showAuthSheet(context),
-                      child: Text(
-                        'GİRİŞ YAP',
-                        style: AppTextStyles.monoLabel.copyWith(
-                          color: AppColors.ink,
-                        ),
-                      ),
                     ),
-            ),
+                  ),
           ),
+        ),
       ],
       shape: const Border(
         bottom: BorderSide(color: AppColors.sand, width: 0.5),
@@ -182,8 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       children: [
         Container(
-          width: 160,
-          height: 160,
+          width: 180, // Metin tam sığsın diye geniş tutuldu
+          height: 180,
           decoration: BoxDecoration(
             color: AppColors.warmWhite,
             borderRadius: BorderRadius.circular(24),
@@ -194,49 +185,20 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 Icons.center_focus_weak,
-                size: 48,
+                size: 54,
                 color: AppColors.sage.withOpacity(0.8),
               ),
-              const SizedBox(height: 12),
-              Text('TARAMAYI BAŞLAT', style: AppTextStyles.monoLabel),
+              const SizedBox(height: 14),
+              Text('ÜRÜN İÇERİĞİNİ TARAT', style: AppTextStyles.monoLabel),
             ],
           ),
         ),
         const SizedBox(height: 12),
         const Text(
-          'YAPAY ZEKA DESTEKLİ ANALİZ',
-          style: TextStyle(fontSize: 9, color: AppColors.textMuted),
+          'YAPAY ZEKA DESTEKLİ OCR ANALİZİ',
+          style: TextStyle(fontSize: 9, color: AppColors.textMuted, letterSpacing: 0.5),
         ),
       ],
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Row(
-      children: [
-        _actionItem(Icons.barcode_reader, "Barkod Oku"),
-        const SizedBox(width: 12),
-        _actionItem(Icons.biotech, "İçindekileri Oku"),
-      ],
-    );
-  }
-
-  Widget _actionItem(IconData icon, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.sand),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.ink, size: 20),
-            const SizedBox(height: 8),
-            Text(label.toUpperCase(), style: AppTextStyles.monoLabel),
-          ],
-        ),
-      ),
     );
   }
 
