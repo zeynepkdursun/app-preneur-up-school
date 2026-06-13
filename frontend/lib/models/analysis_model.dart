@@ -101,7 +101,7 @@ class SkinLensAnalysisOutput {
 // Backend POST request gövdesi için DTO (Data Transfer Object)
 class IngredientAnalysisRequest {
   final String ocrText;
-  final String applicationArea;
+  final List<String> applicationArea; // String yerine List<String> yapıldı
   final String productType;
   final String skinType;
   final List<String> sensitivities;
@@ -119,7 +119,8 @@ class IngredientAnalysisRequest {
   Map<String, dynamic> toJson() {
     return {
       'ocr_text': ocrText,
-      'application_area': applicationArea.toLowerCase(),
+      // Tüm seçimleri küçük harfe çevirerek listeliyoruz
+      'application_area': applicationArea.map((e) => e.toLowerCase()).toList(),
       'product_type': productType.toLowerCase(),
       'skin_type': skinType.toLowerCase(),
       'sensitivities': sensitivities,
