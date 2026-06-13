@@ -17,8 +17,8 @@ class IngredientAnalysisRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "ocr_text": "Aqua, Glycerin, Parfum, Zinc PCA, Sodium Laureth Sulfate",
-                "application_area": "yuz",
-                "product_type": "yuz_nemlendiricisi",
+                "application_area": ["yuz", "vucut"],  # Artık liste olarak gönderilebiliyor
+                "product_type": "gunes_kremi",
                 "skin_type": "yagli",
                 "sensitivities": ["parfum"],
                 "goals": ["yag_dengeleme"],
@@ -27,7 +27,8 @@ class IngredientAnalysisRequest(BaseModel):
     )
 
     ocr_text: str = Field(..., description="Taranan ham içerik listesi metni")
-    application_area: ApplicationArea = Field(..., description="Uygulama bölgesi (yuz, el, vucut, sac)")
+    # Tekil Enum yerine List[ApplicationArea] yapısına geçtik
+    application_area: List[ApplicationArea] = Field(..., min_items=1, description="Uygulama bölgeleri (yuz, el, vucut, sac)")
     product_type: ProductType = Field(..., description="Ürün kategorisi")
     skin_type: SkinType = Field(..., description="Kullanıcının cilt tipi")
     sensitivities: List[Sensitivity] = Field(default=[], description="Hassasiyetler — boş bırakılırsa analiz zayıflar")
