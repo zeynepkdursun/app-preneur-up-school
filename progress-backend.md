@@ -12,3 +12,7 @@
 * **Prompt iyileştirmesi:** Hassasiyet/hedef boş olsa bile cilt tipine göre `caution`/`avoid`/`hero_ingredients` üretmesi için `prompt_builder.py` kuralları güncellendi.
 * **AI yanıt normalizasyonu:** Modelin `ingredient` yerine `item` döndürmesi Pydantic hatasına yol açıyordu; `ai_service.py` içinde alan eşlemesi eklendi.
 * **Boş analiz koruması:** Üç liste de boş dönerse artık `502` + açıklayıcı mesaj; geçerli yanıt `SkinLensAnalysisOutput` olarak serialize ediliyor.
+
+
+## 13th June
+FastAPI şeması (IngredientAnalysisRequest) ve SkinLensPromptBuilder yapısı, tekil veri tipi yerine List[ApplicationArea] kabul edecek şekilde güncellenerek Gemini API için çoklu bölge bağlamı optimize edilmiştir.
