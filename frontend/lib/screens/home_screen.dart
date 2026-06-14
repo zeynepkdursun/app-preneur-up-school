@@ -4,6 +4,7 @@ import '../core/constants.dart';
 import '../core/auth_manager.dart';
 import '../core/api_service.dart';
 import '../core/profile_mappings.dart';
+import '../core/local_profile_manager.dart';
 import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auth_bottom_sheet.dart';
@@ -39,11 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (token != null) {
       await _loadProfile();
-    } else if (mounted) {
-      setState(() {
-        _userSkinType = null;
-        _userSensitivities = [];
-      });
+    } else {
+      await _loadLocalProfile();
     }
 
     print("DEBUG: _checkAuthStatus tetiklendi. Giriş durumu: $_isLoggedIn");
@@ -58,6 +56,22 @@ class _HomeScreenState extends State<HomeScreen> {
       _userSensitivities = profile != null
           ? ProfileMappings.backendSensitivitiesToLabels(profile.sensitivities)
           : [];
+    });
+  }
+
+  Future<void> _loadLocalProfile() async {
+    final localProfile = await LocalProfileManager.loadProfile();
+    if (!mounted) return;
+
+    setState(() {
+      if (localProfile != null) {
+        _userSkinType = localProfile.skinType;
+        _userSensitivities =
+            ProfileMappings.backendSensitivitiesToLabels(localProfile.sensitivities);
+      } else {
+        _userSkinType = null;
+        _userSensitivities = [];
+      }
     });
   }
 
@@ -125,12 +139,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     await _loadProfile();
                   }
                 } else {
-                  Navigator.push(
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SkinTypeScreen(),
+                      builder: (context) => SkinTypeScreen(
+                        initialSkinType: _userSkinType,
+                        initialSensitivities: _userSensitivities,
+                        isGuest: true,
+                      ),
                     ),
                   );
+
+                  if (result != null && mounted) {
+                    await _loadLocalProfile();
+                  }
                 }
               },
               child: const AnalysisCard(), // TODO: İleride _isLoggedIn durumuna göre içine 'isCompleted: true' paslanabilir
@@ -142,7 +164,12 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ScanScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => ScanScreen(
+                      skinType: _userSkinType,
+                      sensitivities: _userSensitivities,
+                    ),
+                  ),
                 );
               },
               child: _buildScanButton(),
@@ -186,15 +213,18 @@ class _HomeScreenState extends State<HomeScreen> {
         Center(
           child: Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: _isLoggedIn
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.person_outline,
-                      color: AppColors.ink,
-                    ),
-                    onPressed: () => Navigator.pushNamed(context, '/profile'),
-                  )
-                : InkWell(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.person_outline,
+                    color: AppColors.ink,
+                  ),
+                  onPressed: () => Navigator.pushNamed(context, '/profile'),
+                ),
+                if (!_isLoggedIn)
+                  InkWell(
                     onTap: () => _showAuthSheet(context),
                     child: Text(
                       'GİRİŞ YAP',
@@ -203,6 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
+              ],
+            ),
           ),
         ),
       ],

@@ -169,7 +169,7 @@ class _AnalysisResultScreenState extends State<AnalysisResultScreen> {
                   // 1. HERO INGREDIENTS (Faydalı Maddeler)
                   ...data.heroIngredients.map((item) => IngredientAnalysisTile(
                         name: item.ingredient,
-                        category: "Hero / Faydalı İçerik",
+                        category: item.reason,
                         icon: Icons.check_circle,
                         iconColor: const Color(0xFFB4CDB8), // PRD Green
                       )),

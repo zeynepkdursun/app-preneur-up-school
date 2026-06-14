@@ -16,3 +16,20 @@
 
 ## 13th June
 FastAPI şeması (IngredientAnalysisRequest) ve SkinLensPromptBuilder yapısı, tekil veri tipi yerine List[ApplicationArea] kabul edecek şekilde güncellenerek Gemini API için çoklu bölge bağlamı optimize edilmiştir.
+
+## 14th June — Backend OCR Service
+- **Yeni endpoint:** `POST /api/v1/ocr/extract` — multipart görsel yükle, Tesseract OCR ile metin çıkar.
+- **OCR servisi:** `app/services/ocr_service.py` — PIL ile ön işleme (gri ton, kontrast) + `pytesseract` (Türkçe/İngilizce).
+- **Bağımlılıklar:** `pytesseract`, `Pillow`, `python-multipart` eklendi; eksik olan `httpx`, `python-jose`, `bcrypt`, `passlib`, `email-validator` da tamamlandı.
+- **Tesseract:** Windows'a kuruldu (v5.4); Linux'ta `apt-get install tesseract-ocr tesseract-ocr-tur` yeterli.
+- **Hata yönetimi:** OCR endpoint'inde `UnidentifiedImageError` yakalama, boş dosya kontrolü ve logging eklendi.
+
+## 15th June — Hibrit Analiz Motoru (Kural + AI)
+- **Hardcoded ingredient bilgi tabanı:** `ingredient_knowledge.py` — 40+ INCI maddesi için cilt tipine göre hero/caution/avoid sınıflandırması ve komedojenite bilgisi.
+- **Hibrit yaklaşım:** AI çağrısından önce madde adları kural tabanında taranıyor; bilinen maddeler hardcoded kurallarla, bilinmeyenler AI ile analiz ediliyor; sonuçlar merge ediliyor.
+- **OCR gürültüsü temizleme:** `_parse_ingredient_lines` ile etiket metninden gerçek INCI maddeleri ayıklanıyor (marka, hacim, talimat filtresi).
+- **AI prompt iyileştirmesi:**
+  - Cilt tipine göre risk/fayda rehberi eklendi (yağlı/kuru/karma/hassas için ayrı tablolar)
+  - Few-shot örnekler (3 adet) ile doğruluk artırıldı
+  - OCR hata toleransı (karakter dönüşümleri) ve INCI tespit ipuçları
+- **Model ayarları:** `temperature` 0.4→0.2 (daha tutarlı), `max_tokens` 1000→2000.

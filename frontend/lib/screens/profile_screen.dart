@@ -6,6 +6,7 @@ import 'home_screen.dart';
 import 'skin_type_screen.dart';
 import '../core/auth_manager.dart';
 import '../core/api_service.dart';
+import '../core/local_profile_manager.dart';
 import '../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiService _apiService = ApiService();
 
+  bool _isLoggedIn = false;
   String? _userSkinType;
   List<String> _userSensitivities = [];
   bool _isLoadingProfile = true;
@@ -25,7 +27,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final token = await AuthManager.getToken();
+    if (!mounted) return;
+    setState(() => _isLoggedIn = token != null);
+    if (token != null) {
+      await _loadProfile();
+    } else {
+      await _loadLocalProfile();
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -38,6 +51,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _userSkinType = profile.skinType;
         _userSensitivities =
             ProfileMappings.backendSensitivitiesToLabels(profile.sensitivities);
+      }
+    });
+  }
+
+  Future<void> _loadLocalProfile() async {
+    final localProfile = await LocalProfileManager.loadProfile();
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingProfile = false;
+      if (localProfile != null) {
+        _userSkinType = localProfile.skinType;
+        _userSensitivities =
+            ProfileMappings.backendSensitivitiesToLabels(localProfile.sensitivities);
       }
     });
   }
@@ -137,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Kullanıcı", 
+                _isLoggedIn ? "Kullanıcı" : "Misafir", 
                 style: AppTextStyles.sectionTitle.copyWith(fontSize: 24),
               ),
             ],
@@ -168,24 +195,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? "..."
               : _getSkinTypeTranslation(_userSkinType),
           onTap: _isLoadingProfile ? () {} : () async {
-            final result = await Navigator.push<UserProfile>(
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => SkinTypeScreen(
                   initialSkinType: _userSkinType,
                   initialSensitivities: _userSensitivities,
+                  isGuest: !_isLoggedIn,
                 ),
               ),
             );
 
             if (result != null && mounted) {
-              setState(() {
-                _userSkinType = result.skinType;
-                _userSensitivities =
-                    ProfileMappings.backendSensitivitiesToLabels(
-                  result.sensitivities,
-                );
-              });
+              if (_isLoggedIn) {
+                final profile = result as UserProfile;
+                setState(() {
+                  _userSkinType = profile.skinType;
+                  _userSensitivities =
+                      ProfileMappings.backendSensitivitiesToLabels(
+                    profile.sensitivities,
+                  );
+                });
+              } else {
+                await _loadLocalProfile();
+              }
             }
           },
         ),
@@ -206,27 +239,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 24),
         const Divider(color: AppColors.sand, thickness: 0.5),
         const SizedBox(height: 12),
-        ProfileMenuItem(
-          icon: Icons.logout_rounded,
-          title: "Oturumu Kapat",
-          isDestructive: true,
-          onTap: () async {
-            // 1. Token'ı güvenli depolama biriminden tamamen temizle
-            await AuthManager.logout(); 
-            
-            // 2. Küresel tekil ApiService istemci havuzunun header kalıntılarını uçur
-            ApiService().reset();
-            
-            if (context.mounted) {
-              // 3. Navigasyon geçmişindeki tüm katmanları kazı ve temiz HomeScreen başlat
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-                (route) => false,
-              );
-            }
-          },
-        ),
+        _isLoggedIn
+            ? ProfileMenuItem(
+                icon: Icons.logout_rounded,
+                title: "Oturumu Kapat",
+                isDestructive: true,
+                onTap: () async {
+                  await AuthManager.logout();
+                  ApiService().reset();
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomeScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
+              )
+            : ProfileMenuItem(
+                icon: Icons.login_rounded,
+                title: "Giriş Yap",
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    (route) => false,
+                  );
+                },
+              ),
       ],
     );
   }

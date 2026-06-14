@@ -1,5 +1,6 @@
 // lib/core/api_service.dart
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -24,7 +25,8 @@ abstract class IApiService {
   Future<UserProfile?> saveProfile(String skinType, Map<String, bool> sensitivities);
   Future<bool> login(String email, String password);
   Future<bool> signUp(SignUpRequest request);
-  void reset(); // Kontrata reset metodunu da ekliyoruz (Interface Segregation)
+  Future<String> extractOcr(String imagePath);
+  void reset();
 }
 
 class SignUpRequest {
@@ -224,6 +226,31 @@ class ApiService implements IApiService {
         print("Kayıt olma bilinmeyen hata: $e");
       }
       return false;
+    }
+  }
+
+  @override
+  Future<String> extractOcr(String imagePath) async {
+    try {
+      File file;
+      try {
+        file = File(imagePath);
+        if (!await file.exists()) {
+          throw Exception("Dosya bulunamadı: $imagePath");
+        }
+      } catch (e) {
+        throw Exception("Dosya okuma hatası: $e");
+      }
+
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path, filename: 'ocr_image.jpg'),
+      });
+      final response = await _dio.post('/ocr/extract', data: formData);
+      return response.data['text'] as String;
+    } on DioException catch (e) {
+      throw Exception("OCR hatası: ${e.response?.data?['detail'] ?? e.message}");
+    } catch (e) {
+      throw Exception("OCR başarısız: $e");
     }
   }
 

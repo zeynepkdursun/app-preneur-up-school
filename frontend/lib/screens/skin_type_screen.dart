@@ -4,15 +4,18 @@ import '../core/profile_mappings.dart';
 import '../widgets/skin_type_option.dart';
 import '../widgets/sensitivity_chip.dart';
 import '../core/api_service.dart';
+import '../core/local_profile_manager.dart';
 
 class SkinTypeScreen extends StatefulWidget {
   final String? initialSkinType;
   final List<String>? initialSensitivities;
+  final bool isGuest;
 
   const SkinTypeScreen({
     super.key, 
     this.initialSkinType, 
     this.initialSensitivities,
+    this.isGuest = false,
   });
 
   @override
@@ -201,6 +204,21 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
   Future<void> _handleProfileSave() async {
     setState(() => _isSaving = true);
     String formattedType = skinTypeMap[selectedLabel]!;
+
+    if (widget.isGuest) {
+      final List<String> activeSensitivities = sensitivities.entries
+          .where((e) => e.value)
+          .map((e) => ProfileMappings.sensitivityLabelsToBackend[e.key] ?? e.key.toLowerCase())
+          .toList();
+
+      await LocalProfileManager.saveProfile(formattedType, activeSensitivities);
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        Navigator.pop(context, true);
+      }
+      return;
+    }
 
     try {
       final profile = await _apiService.saveProfile(formattedType, sensitivities);
