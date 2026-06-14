@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
+import '../core/profile_mappings.dart';
 import '../widgets/profile_menu_item.dart';
 import 'home_screen.dart';
 import 'skin_type_screen.dart';
 import '../core/auth_manager.dart';
 import '../core/api_service.dart';
+import '../models/user_profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,25 +16,34 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Şimdilik yerel state üzerinden yönetiyoruz. 
-  // Aşama C'de burası tamamen ApiService'ten gelen kullanıcı modeline bağlanacak.
-  String _userSkinType = "karma"; 
-  List<String> _userSensitivities = ["Parfüm"];
+  final ApiService _apiService = ApiService();
 
-  // Backend enum değerini arayüzdeki şık Türkçe karşılığına dönüştürür
-  String _getSkinTypeTranslation(String backendType) {
-    switch (backendType.toLowerCase()) {
-      case "yagli":
-        return "Yağlı";
-      case "kuru":
-        return "Kuru";
-      case "normal":
-        return "Normal";
-      case "hassas":
-        return "Hassas";
-      default:
-        return "Karma";
-    }
+  String? _userSkinType;
+  List<String> _userSensitivities = [];
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = await _apiService.getProfile();
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingProfile = false;
+      if (profile != null) {
+        _userSkinType = profile.skinType;
+        _userSensitivities =
+            ProfileMappings.backendSensitivitiesToLabels(profile.sensitivities);
+      }
+    });
+  }
+
+  String _getSkinTypeTranslation(String? backendType) {
+    return ProfileMappings.skinTypeToDisplay(backendType);
   }
 
   @override
@@ -153,24 +164,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ProfileMenuItem(
           icon: Icons.bubble_chart_outlined,
           title: "Cilt Profilini Güncelle",
-          trailingText: _getSkinTypeTranslation(_userSkinType), 
-          onTap: () async {
-            // Seçim ekranını aç ve mevcut durum verilerini parametre olarak gönder
-            final result = await Navigator.push<bool>(
+          trailingText: _isLoadingProfile
+              ? "..."
+              : _getSkinTypeTranslation(_userSkinType),
+          onTap: _isLoadingProfile ? () {} : () async {
+            final result = await Navigator.push<UserProfile>(
               context,
               MaterialPageRoute(
                 builder: (context) => SkinTypeScreen(
-                  initialSkinType: _userSkinType, 
-                  initialSensitivities: _userSensitivities, 
+                  initialSkinType: _userSkinType,
+                  initialSensitivities: _userSensitivities,
                 ),
               ),
             );
-            
-            // Eğer profil başarıyla güncellendiyse arayüzü reaktif olarak yenile
-            if (result == true) {
+
+            if (result != null && mounted) {
               setState(() {
-                // Not: Tam entegrasyonda ApiService üzerinden getProfile çağrılacak.
-                // Şimdilik seçimin arayüze anında yansıması için reaktif senkronizasyon:
+                _userSkinType = result.skinType;
+                _userSensitivities =
+                    ProfileMappings.backendSensitivitiesToLabels(
+                  result.sensitivities,
+                );
               });
             }
           },

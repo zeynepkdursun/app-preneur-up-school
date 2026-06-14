@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../core/constants.dart';
 import '../core/auth_manager.dart';
+import '../core/api_service.dart';
+import '../core/profile_mappings.dart';
 import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auth_bottom_sheet.dart';
@@ -17,23 +19,46 @@ class HomeScreen extends StatefulWidget {
 
 // 2. Asıl işin döndüğü "State" sınıfı
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoggedIn = false; // Durumu burada tutuyoruz
+  bool _isLoggedIn = false;
+  String? _userSkinType;
+  List<String> _userSensitivities = [];
 
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus(); // Sayfa açılır açılmaz kontrol et
+    _checkAuthStatus();
   }
 
   Future<void> _checkAuthStatus() async {
-  // AuthManager üzerinden token kontrolünü gerçeğe dönüştürüyoruz
-    final token = await AuthManager.getToken(); 
-    if (mounted) {
+    final token = await AuthManager.getToken();
+    if (!mounted) return;
+
+    setState(() {
+      _isLoggedIn = token != null;
+    });
+
+    if (token != null) {
+      await _loadProfile();
+    } else if (mounted) {
       setState(() {
-        _isLoggedIn = token != null;
+        _userSkinType = null;
+        _userSensitivities = [];
       });
     }
+
     print("DEBUG: _checkAuthStatus tetiklendi. Giriş durumu: $_isLoggedIn");
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = await ApiService().getProfile();
+    if (!mounted) return;
+
+    setState(() {
+      _userSkinType = profile?.skinType;
+      _userSensitivities = profile != null
+          ? ProfileMappings.backendSensitivitiesToLabels(profile.sensitivities)
+          : [];
+    });
   }
 
   // Bir butona basıldığında çağrılan Auth Sheet
@@ -84,20 +109,22 @@ class _HomeScreenState extends State<HomeScreen> {
             // 1. ADIM: AnalysisCard yönlendirmesi
             // 1. ADIM: Duruma göre akıllı yönlendirme yapan AnalysisCard
             GestureDetector(
-              onTap: () {
+              onTap: () async {
                 if (_isLoggedIn) {
-                  // Kullanıcı giriş yaptıysa, doğrudan mevcut verileriyle "Güncelleme Modunda" açıyoruz
-                  Navigator.push(
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SkinTypeScreen(
-                        initialSkinType: "karma", // TODO: AuthManager / User modelinden gelecek
-                        initialSensitivities: ["Parfüm"],
+                      builder: (context) => SkinTypeScreen(
+                        initialSkinType: _userSkinType,
+                        initialSensitivities: _userSensitivities,
                       ),
                     ),
                   );
+
+                  if (result != null && mounted) {
+                    await _loadProfile();
+                  }
                 } else {
-                  // Kullanıcı anonim ise sıfırdan kurulum ekranını gösteriyoruz
                   Navigator.push(
                     context,
                     MaterialPageRoute(

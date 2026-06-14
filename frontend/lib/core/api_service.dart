@@ -5,6 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'auth_manager.dart';
 import '../models/analysis_model.dart';
+import '../models/user_profile.dart';
+import 'profile_mappings.dart';
 
 String _resolveBaseUrl() {
   if (kIsWeb) return 'http://127.0.0.1:8000/api/v1';
@@ -18,7 +20,8 @@ String _resolveBaseUrl() {
 
 abstract class IApiService {
   Future<SkinLensAnalysisOutput> analyzeIngredients(IngredientAnalysisRequest request);
-  Future<bool> saveProfile(String skinType, Map<String, bool> sensitivities);
+  Future<UserProfile?> getProfile();
+  Future<UserProfile?> saveProfile(String skinType, Map<String, bool> sensitivities);
   Future<bool> login(String email, String password);
   Future<bool> signUp(SignUpRequest request);
   void reset(); // Kontrata reset metodunu da ekliyoruz (Interface Segregation)
@@ -132,11 +135,32 @@ class ApiService implements IApiService {
   }
 
   @override
-  Future<bool> saveProfile(String skinType, Map<String, bool> sensitivities) async {
+  Future<UserProfile?> getProfile() async {
+    try {
+      final response = await _dio.get('/users/profile');
+
+      if (response.statusCode == 200) {
+        return UserProfile.fromJson(_parseResponseData(response.data));
+      }
+      return null;
+    } catch (e) {
+      print("Profil okuma hatası: $e");
+      return null;
+    }
+  }
+
+  @override
+  Future<UserProfile?> saveProfile(
+    String skinType,
+    Map<String, bool> sensitivities,
+  ) async {
     try {
       final List<String> activeSensitivities = sensitivities.entries
           .where((e) => e.value == true)
-          .map((e) => e.key)
+          .map(
+            (e) =>
+                ProfileMappings.sensitivityLabelsToBackend[e.key] ?? e.key.toLowerCase(),
+          )
           .toList();
 
       final response = await _dio.put(
@@ -148,10 +172,13 @@ class ApiService implements IApiService {
         },
       );
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        return UserProfile.fromJson(_parseResponseData(response.data));
+      }
+      return null;
     } catch (e) {
       print("Profil güncelleme hatası: $e");
-      return false;
+      return null;
     }
   }
 

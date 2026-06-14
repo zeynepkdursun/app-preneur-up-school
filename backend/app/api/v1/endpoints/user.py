@@ -11,6 +11,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi import Request
 
+@router.get("/profile", response_model=UserPublic)
+async def get_profile(
+    current_user: User = Depends(get_current_user),
+):
+    return current_user
+
+
 # HTTP POST yerine PUT veya PATCH kullanmak REST standartlarına daha uygundur
 @router.put("/profile", response_model=UserPublic)
 async def update_profile(

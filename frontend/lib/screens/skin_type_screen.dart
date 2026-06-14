@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
+import '../core/profile_mappings.dart';
 import '../widgets/skin_type_option.dart';
 import '../widgets/sensitivity_chip.dart';
 import '../core/api_service.dart';
@@ -26,13 +27,7 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
   String selectedLabel = "";
   
   // Backend enums karşılıkları
-  final Map<String, String> skinTypeMap = {
-    "Yağlı": "yagli",
-    "Kuru": "kuru",
-    "Karma": "karma",
-    "Normal": "normal",
-    "Hassas": "hassas",
-  };
+  final Map<String, String> skinTypeMap = ProfileMappings.skinTypeLabelsToBackend;
 
   Map<String, bool> sensitivities = {
     "Alkol": false, 
@@ -61,13 +56,9 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
     // 2. ÖNCEDEN SEÇİLİ HASSASİYETLER VARSA AKTİF ET
     if (widget.initialSensitivities != null) {
       for (var element in widget.initialSensitivities!) {
-        try {
-          final matchingKey = sensitivities.keys.firstWhere(
-            (k) => k.toLowerCase() == element.toLowerCase(),
-          );
+        final matchingKey = ProfileMappings.backendToSensitivityLabel(element);
+        if (matchingKey != null && sensitivities.containsKey(matchingKey)) {
           sensitivities[matchingKey] = true;
-        } catch (_) {
-          // Eşleşme bulunamazsa sessizce devam et
         }
       }
     }
@@ -212,12 +203,12 @@ class _SkinTypeScreenState extends State<SkinTypeScreen> {
     String formattedType = skinTypeMap[selectedLabel]!;
 
     try {
-      final success = await _apiService.saveProfile(formattedType, sensitivities);
+      final profile = await _apiService.saveProfile(formattedType, sensitivities);
 
       if (mounted) {
         setState(() => _isSaving = false);
-        if (success) {
-          Navigator.pop(context, true); // Geriye başarılı sinyali uçuruyoruz
+        if (profile != null) {
+          Navigator.pop(context, profile);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Profil güncellenemedi. Lütfen tekrar deneyin.")),
