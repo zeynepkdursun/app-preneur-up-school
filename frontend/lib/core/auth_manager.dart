@@ -17,5 +17,7 @@ class AuthManager {
   // Çıkış yap (Token'ı sil)
   static Future<void> logout() async {
     await _storage.delete(key: _tokenKey);
+    
+
   }
 }

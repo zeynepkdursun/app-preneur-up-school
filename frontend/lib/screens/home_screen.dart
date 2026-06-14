@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../core/constants.dart';
+import '../core/auth_manager.dart';
 import '../widgets/analysis_card.dart';
 import '../widgets/product_card.dart';
 import '../widgets/auth_bottom_sheet.dart';
@@ -25,11 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _checkAuthStatus() async {
-    // TODO: İleride AuthManager entegrasyonu için:
-    // final token = await AuthManager.getToken();
-    // setState(() { _isLoggedIn = token != null; });
-    
-    print("DEBUG: _checkAuthStatus tetiklendi. Mevcut durum: $_isLoggedIn");
+  // AuthManager üzerinden token kontrolünü gerçeğe dönüştürüyoruz
+    final token = await AuthManager.getToken(); 
+    if (mounted) {
+      setState(() {
+        _isLoggedIn = token != null;
+      });
+    }
+    print("DEBUG: _checkAuthStatus tetiklendi. Giriş durumu: $_isLoggedIn");
   }
 
   // Bir butona basıldığında çağrılan Auth Sheet
@@ -63,10 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     // BottomSheet kapandıktan sonra burası çalışır
     if (result == true) {
-      setState(() {
-        _isLoggedIn = true; // Giriş durumunu true yap ve arayüzü yenile
-      });
-      _checkAuthStatus(); 
+      await _checkAuthStatus(); 
     } else {
       print("DEBUG: Pencere kapatıldı ama giriş yapılmadı veya true dönmedi.");
     }
@@ -81,16 +82,31 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             // 1. ADIM: AnalysisCard yönlendirmesi
+            // 1. ADIM: Duruma göre akıllı yönlendirme yapan AnalysisCard
             GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SkinTypeScreen(),
-                  ),
-                );
+                if (_isLoggedIn) {
+                  // Kullanıcı giriş yaptıysa, doğrudan mevcut verileriyle "Güncelleme Modunda" açıyoruz
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SkinTypeScreen(
+                        initialSkinType: "karma", // TODO: AuthManager / User modelinden gelecek
+                        initialSensitivities: ["Parfüm"],
+                      ),
+                    ),
+                  );
+                } else {
+                  // Kullanıcı anonim ise sıfırdan kurulum ekranını gösteriyoruz
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SkinTypeScreen(),
+                    ),
+                  );
+                }
               },
-              child: const AnalysisCard(),
+              child: const AnalysisCard(), // TODO: İleride _isLoggedIn durumuna göre içine 'isCompleted: true' paslanabilir
             ),
             const SizedBox(height: 40),
             

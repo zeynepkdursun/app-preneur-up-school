@@ -20,20 +20,47 @@ abstract class IApiService {
   Future<SkinLensAnalysisOutput> analyzeIngredients(IngredientAnalysisRequest request);
   Future<bool> saveProfile(String skinType, Map<String, bool> sensitivities);
   Future<bool> login(String email, String password);
+  Future<bool> signUp(SignUpRequest request);
+  void reset(); // Kontrata reset metodunu da ekliyoruz (Interface Segregation)
+}
+
+class SignUpRequest {
+  final String username;
+  final String email;
+  final String password;
+
+  SignUpRequest({
+    required this.username,
+    required this.email,
+    required this.password,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username': username,
+      'email': email,
+      'password': password,
+    };
+  }
 }
 
 class ApiService implements IApiService {
   final Dio _dio;
 
-  ApiService({Dio? dio}) : _dio = dio ?? Dio(BaseOptions(baseUrl: _resolveBaseUrl(),
-    connectTimeout: const Duration(seconds: 10),
-  receiveTimeout: const Duration(seconds: 10),
-  headers: {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-  },
-  )) 
-  {
+  // --- SINGLETON MIMARISI ---
+  
+  // 1. Gizli Dahili Constructor (Tüm yapılandırmayı tek bir yerde topluyoruz)
+  ApiService._internal() : _dio = Dio(BaseOptions(
+          baseUrl: _resolveBaseUrl(),
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+        )) {
+    
+    // Debug modunda log interseptörlerini ekle
     if (kDebugMode) {
       print('API baseUrl: ${_dio.options.baseUrl}');
       _dio.interceptors.add(LogInterceptor(
@@ -46,6 +73,7 @@ class ApiService implements IApiService {
       ));
     }
 
+    // Her isteğe otomatik Bearer Token gömen Interceptor katmanı
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -62,6 +90,14 @@ class ApiService implements IApiService {
       ),
     );
   }
+
+  // 2. Bellekte statik olarak tutulan tekil örnek
+  static final ApiService _instance = ApiService._internal();
+
+  // 3. Dışarıdan ApiService() çağrıldığında hep aynı örneği döndüren Factory metodu
+  factory ApiService() => _instance;
+
+  // --------------------------
 
   Map<String, dynamic> _parseResponseData(dynamic raw) {
     if (raw is Map<String, dynamic>) return raw;
@@ -90,7 +126,6 @@ class ApiService implements IApiService {
         throw Exception("Backend Hata Kodu: ${response.statusCode}");
       }
     } on DioException catch (e) {
-      // Dio'nun kendi ürettiği detaylı hatayı terminale basalım nerede koptuğunu görelim
       print("DIO ERROR: ${e.type} -> ${e.message}");
       throw Exception("Backend Bağlantı Hatası: ${e.message}");
     }
@@ -141,6 +176,35 @@ class ApiService implements IApiService {
     } catch (e) {
       print("Giriş hatası (${_dio.options.baseUrl}/auth/token): $e");
       return false;
+    }
+  }
+
+  @override
+  Future<bool> signUp(SignUpRequest request) async {
+    try {
+      final response = await _dio.post(
+        '/auth/signup',
+        data: request.toJson(),
+      );
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print("SIGNUP DIO ERROR: ${e.type} -> ${e.response?.data ?? e.message}");
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print("Kayıt olma bilinmeyen hata: $e");
+      }
+      return false;
+    }
+  }
+
+  @override
+  void reset() {
+    _dio.options.headers.remove("Authorization");
+    if (kDebugMode) {
+      print("DEBUG: Küresel ApiService temizlendi, Authorization header uçuruldu.");
     }
   }
 }

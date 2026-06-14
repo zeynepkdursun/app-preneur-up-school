@@ -1,10 +1,39 @@
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../widgets/profile_menu_item.dart';
+import 'home_screen.dart';
 import 'skin_type_screen.dart';
+import '../core/auth_manager.dart';
+import '../core/api_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // Şimdilik yerel state üzerinden yönetiyoruz. 
+  // Aşama C'de burası tamamen ApiService'ten gelen kullanıcı modeline bağlanacak.
+  String _userSkinType = "karma"; 
+  List<String> _userSensitivities = ["Parfüm"];
+
+  // Backend enum değerini arayüzdeki şık Türkçe karşılığına dönüştürür
+  String _getSkinTypeTranslation(String backendType) {
+    switch (backendType.toLowerCase()) {
+      case "yagli":
+        return "Yağlı";
+      case "kuru":
+        return "Kuru";
+      case "normal":
+        return "Normal";
+      case "hassas":
+        return "Hassas";
+      default:
+        return "Karma";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +153,26 @@ class ProfileScreen extends StatelessWidget {
         ProfileMenuItem(
           icon: Icons.bubble_chart_outlined,
           title: "Cilt Profilini Güncelle",
-          trailingText: "Karma", // TODO: Dinamik hale getirilecek
-          onTap: () {
-            Navigator.push(
+          trailingText: _getSkinTypeTranslation(_userSkinType), 
+          onTap: () async {
+            // Seçim ekranını aç ve mevcut durum verilerini parametre olarak gönder
+            final result = await Navigator.push<bool>(
               context,
-              MaterialPageRoute(builder: (context) => const SkinTypeScreen()),
+              MaterialPageRoute(
+                builder: (context) => SkinTypeScreen(
+                  initialSkinType: _userSkinType, 
+                  initialSensitivities: _userSensitivities, 
+                ),
+              ),
             );
+            
+            // Eğer profil başarıyla güncellendiyse arayüzü reaktif olarak yenile
+            if (result == true) {
+              setState(() {
+                // Not: Tam entegrasyonda ApiService üzerinden getProfile çağrılacak.
+                // Şimdilik seçimin arayüze anında yansıması için reaktif senkronizasyon:
+              });
+            }
           },
         ),
         const SizedBox(height: 12),
@@ -153,9 +196,21 @@ class ProfileScreen extends StatelessWidget {
           icon: Icons.logout_rounded,
           title: "Oturumu Kapat",
           isDestructive: true,
-          onTap: () {
-            // TODO: AuthManager.logout() işlemi tetiklenecek
-            Navigator.pushReplacementNamed(context, '/home');
+          onTap: () async {
+            // 1. Token'ı güvenli depolama biriminden tamamen temizle
+            await AuthManager.logout(); 
+            
+            // 2. Küresel tekil ApiService istemci havuzunun header kalıntılarını uçur
+            ApiService().reset();
+            
+            if (context.mounted) {
+              // 3. Navigasyon geçmişindeki tüm katmanları kazı ve temiz HomeScreen başlat
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            }
           },
         ),
       ],
@@ -181,7 +236,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Tıbbi tavsiye değildir, yapay zeka destekli bilgilendirmedir.", // PRD Sec 5 Guardrail
+              "Tıbbi tavsiye değildir, yapay zeka destekli bilgilendirmedir.",
               style: AppTextStyles.bodyMd.copyWith(
                 fontSize: 12,
                 height: 1.4,
