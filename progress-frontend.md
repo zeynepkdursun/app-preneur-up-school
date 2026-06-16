@@ -88,6 +88,9 @@ Mobil ve backend katmanları arasında SOLID prensiplerine uygun tip güvenli ka
 - **ScanScreen**: Hardcoded `"yagli"`/`"parfum"` yerine guest'in kendi profil verilerini kullanıyor.
 - **HomeScreen/ProfileScreen**: Guest kullanıcılar local profillerini görüp düzenleyebiliyor, profil ikonuna herkes erişebiliyor.
 
+## 16th of June — partial_scan Flag Entegrasyonu
+- **`partial_scan` flag:** `OcrResponse`'dan gelen `partial_scan` değeri `/ingredient/analyze` body'sine eklenmeli. Backend'de `IngredientAnalysisRequest.partial_scan` eklendi; frontend `extractOcr` yanıtındaki flag'i analyze isteğine taşımalı.
+
 ## 14th of June — OCR + File Upload
 - **ScanScreen** yeniden tasarlandı: `image_picker` ile fotoğraf yükleme + backend OCR entegrasyonu.
 - `google_mlkit_text_recognition` kaldırıldı (ağır mobile-only); OCR artık backend'de `pytesseract` ile yapılıyor.

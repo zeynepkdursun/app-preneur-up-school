@@ -27,6 +27,7 @@ class IngredientAnalysisRequest(BaseModel):
     )
 
     ocr_text: str = Field(..., description="Taranan ham içerik listesi metni")
+    partial_scan: bool = Field(default=False, description="OCR ingredients başlığı bulunamadıysa True, metin gürültülü olabilir")
     # Tekil Enum yerine List[ApplicationArea] yapısına geçtik
     application_area: List[ApplicationArea] = Field(..., min_items=1, description="Uygulama bölgeleri (yuz, el, vucut, sac)")
     product_type: ProductType = Field(..., description="Ürün kategorisi")

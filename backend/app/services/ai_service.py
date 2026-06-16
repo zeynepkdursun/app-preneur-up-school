@@ -46,17 +46,27 @@ class OpenRouterAIService:
                     entry["ingredient"] = entry.pop("name")
         return json.dumps(data, ensure_ascii=False)
 
+    _HEADER_CLEAN_RE = re.compile(
+        r"(?:^|\n)\s*(?:"
+        r"İçindekiler\s*[-–—/:;]+\s*Ingredients"
+        r"|Ingredients\s*[-–—/:;]+\s*İçindekiler"
+        r"|İçindekiler|Içindekiler"
+        r"|Ingredients"
+        r"|INCI"
+        r"|Bileşenler|Bilesenler"
+        r")\s*[:]?\s*",
+        re.IGNORECASE
+    )
+
     @staticmethod
     def _parse_ingredient_lines(raw_text: str) -> list[str]:
-        cleaned = re.sub(r"(?:^|\n)\s*(?:İçindekiler|Ingredients|INCI|Bileşenler)\s*[:]\s*", ",", raw_text, flags=re.IGNORECASE)
+        cleaned = OpenRouterAIService._HEADER_CLEAN_RE.sub(",", raw_text)
         parts = re.split(r"[,;]\s*", cleaned)
         seen = set()
         result = []
         for p in parts:
             p = p.strip().strip(".")
-            if not p:
-                continue
-            if len(p) < 2:
+            if not p or len(p) < 2:
                 continue
             if re.match(r"^\d+\s*(ml|gr|g|oz|l|kg)$", p, re.IGNORECASE):
                 continue
@@ -106,6 +116,14 @@ class OpenRouterAIService:
 
         unknown_text = ", ".join(unknown_ingredients)
 
+        partial_warning = (
+            "\nNOT: OCR metninde 'İçindekiler' başlığı tespit edilemediği için liste "
+            "elle çıkarılmıştır. Listede ürün adı, marka veya talimat gibi "
+            "içerik dışı metinler bulunabilir. Sadece gerçek INCI maddelerini "
+            "analiz et, emin olmadıklarını analiz dışı bırak.\n"
+            if request.partial_scan else ""
+        )
+
         hybrid_prompt = (
             f"[BAĞLAM VE KULLANICI PROFİLİ]\n"
             f"- Uygulama Bölgeleri: {', '.join(a.value.upper() for a in request.application_area)}\n"
@@ -120,7 +138,7 @@ class OpenRouterAIService:
             f"Önceden analiz edilen maddeleri tekrar listeleme.\n"
             f"JSON formatında 'hero_ingredients', 'caution', 'avoid' arrayleri döndür.\n"
             f"Her öğede 'ingredient' ve 'reason' (maks 10 kelime) alanları zorunlu.\n"
-            f"Hiçbir yeni madde eşleşmezse boş array döndür."
+            f"Hiçbir yeni madde eşleşmezse boş array döndür.{partial_warning}"
         )
 
         system_instruction = SkinLensPromptBuilder.get_system_instruction()

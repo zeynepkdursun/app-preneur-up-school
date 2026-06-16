@@ -24,6 +24,13 @@ FastAPI şeması (IngredientAnalysisRequest) ve SkinLensPromptBuilder yapısı, 
 - **Tesseract:** Windows'a kuruldu (v5.4); Linux'ta `apt-get install tesseract-ocr tesseract-ocr-tur` yeterli.
 - **Hata yönetimi:** OCR endpoint'inde `UnidentifiedImageError` yakalama, boş dosya kontrolü ve logging eklendi.
 
+## 16th June — OCR Ingredients Section Extraction
+- **Ingredients ayıklama (`extract_ingredients_section`):** OCR ham metninden sadece içindekiler bölümünü regex ile ayıklayan fonksiyon eklendi (`ocr_service.py`). Desteklenen başlıklar: TR/EN/FR/DE/ES + OCR hataları.
+- **`partial_scan` flag:** Header bulunamazsa `partial_scan=True` döner; bu flag `OcrResponse` ve `IngredientAnalysisRequest` şemalarına eklendi, uçtan uca taşınıyor.
+- **AI prompt uyarısı:** `partial_scan=True` olduğunda LLM prompt'una "metin gürültülü olabilir, sadece INCI maddelerini analiz et" uyarısı ekleniyor.
+- **Regex iyileştirme:** Çoklu dil desteği (Ingrédients, Inhaltsstoffe, Zutaten, Ingredientes) ve yaygın OCR hataları (Içindekiler, Bilesenler) için header pattern'leri genişletildi.
+- **`_HEADER_CLEAN_RE`:** `ai_service.py`'de header strip regex'i derlenmiş sabite çekildi, `_parse_ingredient_lines` ile uyum korundu.
+
 ## 15th June — Hibrit Analiz Motoru (Kural + AI)
 - **Hardcoded ingredient bilgi tabanı:** `ingredient_knowledge.py` — 40+ INCI maddesi için cilt tipine göre hero/caution/avoid sınıflandırması ve komedojenite bilgisi.
 - **Hibrit yaklaşım:** AI çağrısından önce madde adları kural tabanında taranıyor; bilinen maddeler hardcoded kurallarla, bilinmeyenler AI ile analiz ediliyor; sonuçlar merge ediliyor.

@@ -23,12 +23,12 @@ async def ocr_extract(file: UploadFile = File(...)):
         except UnidentifiedImageError:
             raise HTTPException(status_code=400, detail="Görsel dosyası okunamadı. Geçersiz format.")
 
-        text = extract_text_from_image(image)
+        text, partial_scan = extract_text_from_image(image)
 
         if not text:
             raise HTTPException(status_code=422, detail="Görselden metin çıkarılamadı.")
 
-        return OcrResponse(text=text)
+        return OcrResponse(text=text, partial_scan=partial_scan)
 
     except HTTPException:
         raise
