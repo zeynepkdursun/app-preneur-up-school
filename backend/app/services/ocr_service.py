@@ -58,6 +58,17 @@ _NON_INGREDIENT_RE = re.compile(
     r"|Talimat|TALİMAT"
     r"|Bu\s*[üÜ]rün"
     r"|Muhafaza"
+    r"|Responsible\s+Person"
+    r"|Address|Adtess"
+    r"|Manufacturer|Manutacturer"
+    r"|Brand\s+Owner"
+    r"|Distributed\s+by"
+    r"|Imported\s+by"
+    r"|Made\s+in|Mado\s+in"
+    r"|Customer\s+Service"
+    r"|Email|Emall"
+    r"|Phone|Tel"
+    r"|\w+@\w+"
     r")\s*[:]",
     re.IGNORECASE
 )
@@ -76,7 +87,7 @@ def extract_ingredients_section(raw_text: str) -> tuple[str, bool]:
 
     end = len(lines)
     for i in range(start + 1, len(lines)):
-        if _NON_INGREDIENT_RE.match(lines[i].strip()):
+        if _NON_INGREDIENT_RE.search(lines[i].strip()):
             end = i
             break
 

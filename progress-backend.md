@@ -24,6 +24,11 @@ FastAPI şeması (IngredientAnalysisRequest) ve SkinLensPromptBuilder yapısı, 
 - **Tesseract:** Windows'a kuruldu (v5.4); Linux'ta `apt-get install tesseract-ocr tesseract-ocr-tur` yeterli.
 - **Hata yönetimi:** OCR endpoint'inde `UnidentifiedImageError` yakalama, boş dosya kontrolü ve logging eklendi.
 
+## 16th June — OCR Ingredients Section Extraction + v2 fix
+- **English section headers eklendi:** `_NON_INGREDIENT_RE`'ye `Responsible Person`, `Address`, `Manufacturer`, `Brand Owner`, `Email`, `Made in`, `Distributed by`, `Customer Service`, `Phone/Tel` + OCR hata varyantları (`Adtess`, `Manutacturer`, `Emall`, `Mado in`) eklendi; email regex (`\w+@\w+`) de pattern'e dahil edildi.
+- **`re.match` → `re.search`:** Bitiş satırı tespitinde `match` yerine `search` kullanılarak OCR noise'u (baştaki `£U`, `|` vb.) olsa bile eşleşme sağlandı.
+- **Sorun:** `INGREDIENTS:` başlığı bulunuyor ama İngilizce bölüm başlıkları (`Responsible Person:`, `Manufacturer:`) pattern'de olmadığı ve `re.match` satır başını zorunlu kıldığı için ingredients bitişi algılanamıyordu. Bu fix ile çözüldü.
+
 ## 16th June — OCR Ingredients Section Extraction
 - **Ingredients ayıklama (`extract_ingredients_section`):** OCR ham metninden sadece içindekiler bölümünü regex ile ayıklayan fonksiyon eklendi (`ocr_service.py`). Desteklenen başlıklar: TR/EN/FR/DE/ES + OCR hataları.
 - **`partial_scan` flag:** Header bulunamazsa `partial_scan=True` döner; bu flag `OcrResponse` ve `IngredientAnalysisRequest` şemalarına eklendi, uçtan uca taşınıyor.
